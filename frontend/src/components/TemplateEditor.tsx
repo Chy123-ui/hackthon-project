@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   listWorlds, getWorldTemplate, updateWorldTemplate,
   getPlayerTemplate, updatePlayerTemplate, getPreferencesTemplate,
   updatePreferencesTemplate, previewTemplate,
-  exportWorld, importWorld, deleteWorld, modifyWorld, getModifySuggestions,
+  exportWorld, deleteWorld, modifyWorld, getModifySuggestions,
 } from "../services/api";
 import NewWorldDialog from "./NewWorldDialog";
 import WorldFileEditor from "./WorldFileEditor";
@@ -33,7 +33,6 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
   const [aiLoadingSuggestions, setAiLoadingSuggestions] = useState(false);
   const [multiMode, setMultiMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => void loadAll(), []);
 
@@ -73,22 +72,6 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
       setStatus("saved"); setTimeout(() => setStatus(""), 2000);
     } catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); }
     finally { setSaving(false); }
-  }
-
-  async function handleImport() {
-    const file = fileInputRef.current?.files?.[0];
-    if (!file) return;
-    try {
-      setStatus("Importing...");
-      const ext = file.name.split(".").pop()?.toLowerCase() || "";
-      const binary = ["docx", "doc"].includes(ext);
-      let content: string;
-      if (binary) { const buf = await file.arrayBuffer(); content = btoa(String.fromCharCode(...new Uint8Array(buf))); }
-      else { content = await file.text(); }
-      const result = await importWorld({ content, filename: file.name, binary });
-      await loadAll(); openEditor(result.world);
-      setStatus("imported"); setTimeout(() => setStatus(""), 2000);
-    } catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); }
   }
 
   async function handleExport(w: string) {
@@ -250,7 +233,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
       <TemplateList
         worlds={visibleWorlds} selectedWorld={selectedWorld}
         onSelect={openEditor} onNewWorld={() => { setShowNewWorld(true); setShowAiAssist(false); }}
-        onImport={() => { fileInputRef.current?.click(); setShowNewWorld(false); }} onExport={handleExport}
+        onExport={handleExport}
         onDelete={async (w) => { try { await deleteWorld(w); setStatus("deleted"); setTimeout(() => setStatus(""), 2000); await loadAll(); } catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); } }}
         multiSelect={multiMode}
         selected={selected}
@@ -260,8 +243,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
         selectedCount={selected.size}
         onBulkDelete={handleBulkDelete}
       />
-      {showNewWorld && <NewWorldDialog onCreated={(w) => { setShowNewWorld(false); loadAll().then(() => openEditor(w)); }} onError={(msg) => setStatus("error: " + msg)} />}
-      <input ref={fileInputRef} type="file" accept=".txt,.json,.yaml,.md,.docx,.doc" style={{ display: "none" }} onChange={handleImport} />
+      {showNewWorld && <NewWorldDialog onCreated={(w) => { setShowNewWorld(false); loadAll().then(() => openEditor(w)); }} onError={(msg) => setStatus("error: " + msg)} onClose={() => setShowNewWorld(false)} />}
       {status && (
         <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "10px 24px", borderRadius: "var(--radius)", background: status.startsWith("error") ? "var(--danger)" : "var(--accent)", color: "#fff", fontSize: 14, fontWeight: 500, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", zIndex: 1000 }}>
           {status}

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { generateWorld } from "../services/api";
+import { generateWorld, importWorld } from "../services/api";
 
 const EXAMPLES = [
   "cyberpunk detective in rain-soaked Neo Tokyo",
@@ -47,15 +47,21 @@ export const MODIFY_EXAMPLES = [
   "add a hidden underground black market network",
 ] as const;
 
+type Tab = "ai" | "import";
+
 interface Props {
   onCreated: (world: string) => void;
   onError: (msg: string) => void;
+  onClose: () => void;
 }
 
-export default function NewWorldDialog({ onCreated, onError }: Props) {
+export default function NewWorldDialog({ onCreated, onError, onClose }: Props) {
+  const [tab, setTab] = useState<Tab>("ai");
   const [concept, setConcept] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
   const example = useRef(EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)]);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleGenerate(optConcept?: string) {
     const c = (optConcept ?? concept).trim();
@@ -72,55 +78,110 @@ export default function NewWorldDialog({ onCreated, onError }: Props) {
     }
   }
 
+  async function handleImport() {
+    const file = importFile;
+    if (!file) return;
+    setGenerating(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "";
+      const binary = ["docx", "doc"].includes(ext);
+      let content: string;
+      if (binary) { const buf = await file.arrayBuffer(); content = btoa(String.fromCharCode(...new Uint8Array(buf))); }
+      else { content = await file.text(); }
+      const result = await importWorld({ content, filename: file.name, binary });
+      setImportFile(null);
+      onCreated(result.world);
+    } catch (e: unknown) {
+      onError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) { setImportFile(file); handleImport(); }
+  }
+
   return (
-    <div
-      style={{
-        marginBottom: 16,
-        padding: 16,
-        background: "var(--bg-card)",
-        border: "1px solid var(--accent)",
-        borderRadius: "var(--radius)",
-      }}
-    >
-      <h3 style={{ color: "var(--accent)", fontSize: 14, marginBottom: 8 }}>
-        AI Generate a New World
-      </h3>
-      <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
-        Describe a world concept and AI will create templates for it.<br />
-        To import an existing file (.txt, .docx, .json), use the Import button instead.
-      </p>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
-          type="text"
-          placeholder={`e.g. "${example.current}"`}
-          value={concept}
-          onChange={(e) => setConcept(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !generating) {
-              const c = concept.trim();
-              if (c) { handleGenerate(c); }
-              else { setConcept(example.current); }
-            }
-          }}
-          disabled={generating}
-          style={{
-            flex: 1,
-            padding: "10px 14px",
-            background: "var(--bg-input)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            color: "var(--text)",
-            fontSize: 14,
-          }}
-        />
-        <button
-          className="primary"
-          onClick={() => handleGenerate()}
-          disabled={generating}
-        >
-          {generating ? "Generating..." : "Generate"}
+    <div style={{
+      marginBottom: 16, padding: 16, background: "var(--bg-card)",
+      border: "1px solid var(--accent)", borderRadius: "var(--radius)",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <h3 style={{ color: "var(--accent)", fontSize: 14 }}>New World</h3>
+        <button className="secondary" style={{ fontSize: 12, padding: "2px 10px" }} onClick={onClose}>Close</button>
+      </div>
+
+      <div style={{ display: "flex", gap: 0, marginBottom: 12, borderBottom: "1px solid var(--border)" }}>
+        <button className={`tab-btn ${tab === "ai" ? "active" : ""}`} onClick={() => setTab("ai")} style={{ fontSize: 13 }}>
+          AI Generate
+        </button>
+        <button className={`tab-btn ${tab === "import" ? "active" : ""}`} onClick={() => setTab("import")} style={{ fontSize: 13 }}>
+          Import File
         </button>
       </div>
+
+      {tab === "ai" && (
+        <>
+          <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
+            Describe a world concept. AI will create all three templates.
+          </p>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              type="text"
+              placeholder={`e.g. "${example.current}"`}
+              value={concept}
+              onChange={(e) => setConcept(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !generating) {
+                  const c = concept.trim();
+                  if (c) { handleGenerate(c); }
+                  else { setConcept(example.current); }
+                }
+              }}
+              disabled={generating}
+              style={{
+                flex: 1, padding: "10px 14px", background: "var(--bg-input)",
+                border: "1px solid var(--border)", borderRadius: "var(--radius)",
+                color: "var(--text)", fontSize: 14,
+              }}
+            />
+            <button className="primary" onClick={() => handleGenerate()} disabled={generating}>
+              {generating ? "Generating..." : "Generate"}
+            </button>
+          </div>
+        </>
+      )}
+
+      {tab === "import" && (
+        <>
+          <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
+            Upload a file (.txt, .json, .docx, .doc, .md, .yaml).
+            AI will extract and create the world from it.
+          </p>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".txt,.json,.yaml,.yml,.md,.docx,.doc"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
+          <button
+            className="primary"
+            onClick={() => fileRef.current?.click()}
+            disabled={generating}
+            style={{ padding: "10px 24px" }}
+          >
+            {generating ? "Importing..." : "Choose File"}
+          </button>
+          {importFile && (
+            <span style={{ marginLeft: 8, color: "var(--text-secondary)", fontSize: 13 }}>
+              {importFile.name}
+            </span>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -3,7 +3,6 @@ interface Props {
   selectedWorld: string;
   onSelect: (world: string) => void;
   onNewWorld: () => void;
-  onImport: () => void;
   onExport: (world: string) => void;
   onDelete: (world: string) => void;
   multiSelect?: boolean;
@@ -20,7 +19,6 @@ export default function TemplateList({
   selectedWorld,
   onSelect,
   onNewWorld,
-  onImport,
   onExport,
   onDelete,
   multiSelect,
@@ -40,9 +38,6 @@ export default function TemplateList({
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <button className="primary" onClick={onNewWorld}>
           + New World
-        </button>
-        <button className="secondary" onClick={onImport}>
-          Import
         </button>
         <button className="secondary" onClick={onToggleMulti}>
           {multiMode ? "Cancel" : "Select"}
