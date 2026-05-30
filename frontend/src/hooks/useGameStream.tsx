@@ -16,8 +16,16 @@ export function stripTags(raw: string): string {
 }
 
 export function displayNarrate(raw: string): string {
-  const m = raw.match(/<narrate>([\s\S]*?)<\/narrate>/);
-  return m ? m[1].trim() : raw;
+  if (raw.includes("<narrate>")) {
+    const start = raw.indexOf("<narrate>") + 9;
+    const end = raw.indexOf("</narrate>", start);
+    if (end !== -1) {
+      return raw.slice(start, end).trim();
+    }
+    const partial = raw.slice(start).trim();
+    return partial ? partial + " \u2026" : "[interrupted]";
+  }
+  return raw;
 }
 
 /** Stateful stream display: only shows narrate content, hides other blocks during streaming */
