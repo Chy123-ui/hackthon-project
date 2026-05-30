@@ -14,6 +14,7 @@ function App() {
   const [historyKey, setHistoryKey] = useState(0);
   const [templatesKey, setTemplatesKey] = useState(0);
   const [settingsKey, setSettingsKey] = useState(0);
+  const [historySearch, setHistorySearch] = useState("");
   const { theme, toggleTheme } = useTheme();
 
   function handleTabClick(id: Tab) {
@@ -49,19 +50,26 @@ function App() {
             {t.label}
           </button>
         ))}
+        <div className="nav-search">
+          <input
+            type="search"
+            placeholder="Search stories..."
+            value={historySearch}
+            onChange={(e) => setHistorySearch(e.target.value)}
+          />
+        </div>
         <button
           className="tab-btn theme-toggle"
           onClick={toggleTheme}
           title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          style={{ marginLeft: "auto" }}
         >
           {theme === "dark" ? "☀️" : "🌙"}
         </button>
       </div>
 
       <div className="tab-content">
-        {tab === "game" && <GameView key={gameKey} />}
-        {tab === "history" && <HistoryView key={historyKey} />}
+        {tab === "game" && <GameView key={gameKey} searchQuery={historySearch} />}
+        {tab === "history" && <HistoryView key={historyKey} searchQuery={historySearch} />}
         {tab === "templates" && <TemplateEditor key={templatesKey} />}
         {tab === "settings" && <SettingsPanel key={settingsKey} />}
       </div>

@@ -10,9 +10,13 @@ import {
 } from "../services/api";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 import GameChat from "./GameChat";
-import SessionList, { sortByUpdatedDesc } from "./SessionList";
+import SessionList, { filterSessions, sortByUpdatedDesc } from "./SessionList";
 
-export default function GameView() {
+interface Props {
+  searchQuery?: string;
+}
+
+export default function GameView({ searchQuery = "" }: Props) {
   const [sessions, setSessions] = useState<GameListItem[]>([]);
   const [worlds, setWorlds] = useState<string[]>([]);
   const [playerName, setPlayerName] = useState("");
@@ -107,6 +111,8 @@ export default function GameView() {
     );
   }
 
+  const visibleSessions = filterSessions(sessions, searchQuery).slice(0, 3);
+
   return (
     <div className="game-sessions">
       <h2>AI Adventure</h2>
@@ -120,7 +126,7 @@ export default function GameView() {
         />
       )}
 
-      {sessions.length > 0 && (
+      {visibleSessions.length > 0 && (
         <>
           <h3
             style={{
@@ -132,7 +138,7 @@ export default function GameView() {
             Continue Playing
           </h3>
           <SessionList
-            sessions={sessions.slice(0, 3)}
+            sessions={visibleSessions}
             onOpen={(session) => { setActiveSession(session.id); setActivePlayerName(session.player_name); }}
             onDelete={handleDelete}
           />

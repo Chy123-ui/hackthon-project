@@ -12,6 +12,18 @@ export function sortByUpdatedDesc(sessions: GameListItem[]) {
   );
 }
 
+export function filterSessions(sessions: GameListItem[], query: string) {
+  const keyword = query.trim().toLowerCase();
+  if (!keyword) return sessions;
+
+  return sessions.filter((session) => {
+    return (
+      session.player_name.toLowerCase().includes(keyword) ||
+      session.world.toLowerCase().includes(keyword)
+    );
+  });
+}
+
 export default function SessionList({ sessions, onOpen, onDelete }: Props) {
   return (
     <div className="session-list">

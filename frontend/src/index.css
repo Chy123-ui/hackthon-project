@@ -96,6 +96,7 @@ body {
 
 .tab-bar {
   display: flex;
+  align-items: center;
   gap: 0;
   border-bottom: 1px solid var(--border);
   padding: 0 16px;
@@ -123,6 +124,34 @@ body {
 .tab-btn.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+
+.nav-search {
+  margin-left: auto;
+  width: min(260px, 28vw);
+  padding: 0 12px;
+}
+
+.nav-search input {
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-input) 84%, transparent);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+.nav-search input::placeholder {
+  color: var(--text-secondary);
+}
+
+.nav-search input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .tab-content {

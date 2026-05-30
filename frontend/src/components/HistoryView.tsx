@@ -3,9 +3,13 @@ import type { GameListItem } from "../services/api";
 import { deleteGame, listGames } from "../services/api";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 import GameChat from "./GameChat";
-import SessionList, { sortByUpdatedDesc } from "./SessionList";
+import SessionList, { filterSessions, sortByUpdatedDesc } from "./SessionList";
 
-export default function HistoryView() {
+interface Props {
+  searchQuery?: string;
+}
+
+export default function HistoryView({ searchQuery = "" }: Props) {
   const [sessions, setSessions] = useState<GameListItem[]>([]);
   const [activeSession, setActiveSession] = useState<GameListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -55,6 +59,8 @@ export default function HistoryView() {
     );
   }
 
+  const visibleSessions = filterSessions(sessions, searchQuery);
+
   return (
     <div className="game-sessions">
       <h2>History</h2>
@@ -68,7 +74,7 @@ export default function HistoryView() {
         />
       )}
 
-      {sessions.length > 0 && (
+      {visibleSessions.length > 0 && (
         <>
           <h3
             style={{
@@ -80,7 +86,7 @@ export default function HistoryView() {
             All Stories
           </h3>
           <SessionList
-            sessions={sessions}
+            sessions={visibleSessions}
             onOpen={setActiveSession}
             onDelete={handleDelete}
           />
