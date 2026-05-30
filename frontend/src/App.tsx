@@ -11,11 +11,14 @@ type Tab = "game" | "history" | "templates" | "settings";
 function App() {
   const [tab, setTab] = useState<Tab>("game");
   const [gameKey, setGameKey] = useState(0);
+  const [historyKey, setHistoryKey] = useState(0);
   const { theme, toggleTheme } = useTheme();
 
   function handleTabClick(id: Tab) {
     if (id === "game" && tab === "game") {
       setGameKey((k) => k + 1);
+    } else if (id === "history" && tab === "history") {
+      setHistoryKey((k) => k + 1);
     } else {
       setTab(id);
     }
@@ -52,7 +55,7 @@ function App() {
 
       <div className="tab-content">
         {tab === "game" && <GameView key={gameKey} />}
-        {tab === "history" && <HistoryView />}
+        {tab === "history" && <HistoryView key={historyKey} />}
         {tab === "templates" && <TemplateEditor />}
         {tab === "settings" && <SettingsPanel />}
       </div>
