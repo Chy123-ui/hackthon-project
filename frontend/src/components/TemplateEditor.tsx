@@ -213,7 +213,15 @@ export default function TemplateEditor() {
       />
 
       {status && (
-        <div style={{ padding: "8px 16px", color: status.startsWith("error") ? "var(--danger)" : "var(--accent)", fontSize: 13 }}>
+        <div style={{
+          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+          padding: "10px 24px", borderRadius: "var(--radius)",
+          background: status.startsWith("error") ? "var(--danger)" : "var(--accent)",
+          color: "#fff", fontSize: 14, fontWeight: 500,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+          zIndex: 1000,
+          animation: "fadeIn 0.2s ease",
+        }}>
           {status}
         </div>
       )}
