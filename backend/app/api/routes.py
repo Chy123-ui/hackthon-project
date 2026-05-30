@@ -272,6 +272,13 @@ async def import_world(body: dict):
     filename = body.get("filename", "imported.txt").strip()
     is_binary = body.get("binary", False)
 
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    allowed = {"txt", "json", "yaml", "yml", "md", "docx", "doc"}
+    if is_binary and ext not in {"docx", "doc"}:
+        raise HTTPException(status_code=400, detail=f"Unsupported format: .{ext}")
+    if not is_binary and ext not in allowed:
+        raise HTTPException(status_code=400, detail=f"Unsupported format: .{ext}")
+
     if is_binary:
         import base64
         raw = base64.b64decode(content)
