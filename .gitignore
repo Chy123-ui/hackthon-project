@@ -1,1 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+dist/
+build/
+
+# PyInstaller
 *.spec
+
+# Runtime data (user worlds in data/worlds/)
+# fantasy template lives in default_worlds/ (not data/) -- always tracked
+backend/data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+Key/
+.env
