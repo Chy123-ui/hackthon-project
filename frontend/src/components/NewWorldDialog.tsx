@@ -63,8 +63,9 @@ export default function NewWorldDialog({ onCreated, onError }: Props) {
           onChange={(e) => setConcept(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !generating) {
-              const c = concept.trim() || example.current;
-              if (c) { setConcept(c); handleGenerate(c); }
+              const c = concept.trim();
+              if (c) { handleGenerate(c); }
+              else { setConcept(example.current); }
             }
           }}
           disabled={generating}
