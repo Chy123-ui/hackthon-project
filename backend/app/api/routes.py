@@ -166,7 +166,7 @@ name: 世界名称（英文 slug，如 cyberpunk_city）
 description: |
   详细的世界观描述，包括地理、历史、势力、种族等
 starting_scene: |
-  {player_name}的冒险开场场景描述，用第二人称叙述
+  {{player_name}}的冒险开场场景描述，用第二人称叙述
 ```
 
 ```yaml
