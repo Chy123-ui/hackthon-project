@@ -226,7 +226,7 @@ function ChatInput({
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      const text = e.currentTarget.value.trim();
+      const text = (e.currentTarget as HTMLTextAreaElement).value.trim();
       if (text) onSend(text);
     }
   }

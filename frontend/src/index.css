@@ -349,7 +349,7 @@ button:disabled {
 
 /* Settings */
 .settings-view {
-  max-width: 500px;
+  max-width: 680px;
   margin: 32px auto;
   padding: 24px;
   background: var(--bg-card);
