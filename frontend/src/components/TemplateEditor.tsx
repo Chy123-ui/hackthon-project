@@ -8,6 +8,8 @@ import {
   getPreferencesTemplate,
   updatePreferencesTemplate,
   previewTemplate,
+  exportWorld,
+  importWorld,
 } from "../services/api";
 import NewWorldDialog from "./NewWorldDialog";
 import WorldFileEditor from "./WorldFileEditor";
@@ -97,13 +99,28 @@ export default function TemplateEditor() {
     const file = fileInputRef.current?.files?.[0];
     if (!file) return;
     try {
+      setStatus("Importing...");
       const text = await file.text();
-      const name = file.name.replace(/\.(txt|yaml|md)$/i, "").toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 30) || "imported";
-      await updateWorldTemplate(name, { name, description: text, starting_scene: text });
-      await updatePlayerTemplate(name, { name: "Adventurer", description: "", background: "" });
-      await updatePreferencesTemplate(name, { narrative_style: "", tone: "", pacing: "moderate", detail_level: "rich" });
+      const result = await importWorld(text, file.name);
       await loadAll();
-      openEditor(name);
+      openEditor(result.world);
+      setStatus("imported");
+      setTimeout(() => setStatus(""), 2000);
+    } catch (e: unknown) {
+      setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+    }
+  }
+
+  async function handleExport(world: string) {
+    try {
+      const data = await exportWorld(world);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${world}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (e: unknown) {
       setStatus("error: " + (e instanceof Error ? e.message : String(e)));
     }
@@ -155,6 +172,7 @@ export default function TemplateEditor() {
         onSelect={openEditor}
         onNewWorld={() => setShowNewWorld(true)}
         onImport={() => fileInputRef.current?.click()}
+        onExport={handleExport}
       />
 
       {showNewWorld && (
@@ -170,7 +188,7 @@ export default function TemplateEditor() {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".txt,.yaml,.md"
+        accept=".txt,.json,.yaml,.md"
         style={{ display: "none" }}
         onChange={handleImport}
       />

@@ -105,6 +105,14 @@ export async function generateWorld(concept: string): Promise<{ world: string; f
   return request("/templates/new", { method: "POST", body: JSON.stringify({ concept }) });
 }
 
+export async function exportWorld(world: string): Promise<{ world: Record<string, unknown>; player: Record<string, unknown>; preferences: Record<string, unknown> }> {
+  return request(`/templates/${world}/export`);
+}
+
+export async function importWorld(content: string, filename: string): Promise<{ world: string; files: string[]; source: string }> {
+  return request("/templates/import", { method: "POST", body: JSON.stringify({ content, filename }) });
+}
+
 export async function newGame(world: string, player_name: string): Promise<{ game_id: string }> {
   return request("/game/new", { method: "POST", body: JSON.stringify({ world, player_name }) });
 }

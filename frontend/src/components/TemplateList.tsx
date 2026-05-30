@@ -4,6 +4,7 @@ interface Props {
   onSelect: (world: string) => void;
   onNewWorld: () => void;
   onImport: () => void;
+  onExport: (world: string) => void;
 }
 
 export default function TemplateList({
@@ -12,16 +13,11 @@ export default function TemplateList({
   onSelect,
   onNewWorld,
   onImport,
+  onExport,
 }: Props) {
   return (
     <div style={{ padding: 16, flex: 1, overflowY: "auto" }}>
-      <h2
-        style={{
-          color: "var(--accent)",
-          fontSize: 20,
-          marginBottom: 16,
-        }}
-      >
+      <h2 style={{ color: "var(--accent)", fontSize: 20, marginBottom: 16 }}>
         Template Manager
       </h2>
 
@@ -30,7 +26,7 @@ export default function TemplateList({
           + New World
         </button>
         <button className="secondary" onClick={onImport}>
-          Import .txt
+          Import (.txt/.json)
         </button>
       </div>
 
@@ -44,26 +40,33 @@ export default function TemplateList({
         {worlds.map((w) => (
           <div
             key={w}
-            onClick={() => onSelect(w)}
             style={{
               padding: 16,
-              background:
-                w === selectedWorld ? "rgba(124,92,191,0.1)" : "var(--bg-card)",
-              border:
-                w === selectedWorld
-                  ? "1px solid var(--accent)"
-                  : "1px solid var(--border)",
+              background: w === selectedWorld ? "rgba(124,92,191,0.1)" : "var(--bg-card)",
+              border: w === selectedWorld ? "1px solid var(--accent)" : "1px solid var(--border)",
               borderRadius: "var(--radius)",
               cursor: "pointer",
               transition: "all 0.2s",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            <h3 style={{ fontSize: 16, color: "var(--text)", marginBottom: 4 }}>
-              {w}
-            </h3>
-            <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              world / player / preferences
-            </p>
+            <div onClick={() => onSelect(w)} style={{ flex: 1 }}>
+              <h3 style={{ fontSize: 16, color: "var(--text)", marginBottom: 4 }}>
+                {w}
+              </h3>
+              <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                world / player / preferences
+              </p>
+            </div>
+            <button
+              className="secondary"
+              onClick={(e) => { e.stopPropagation(); onExport(w); }}
+              style={{ fontSize: 12, padding: "4px 12px" }}
+            >
+              Export
+            </button>
           </div>
         ))}
       </div>

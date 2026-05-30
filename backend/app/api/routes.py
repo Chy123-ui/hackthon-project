@@ -1,5 +1,6 @@
 """API 路由 -- Agent 协议 + Tape 上下文管理"""
 import json
+import re
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from ..core.config import settings
@@ -156,6 +157,124 @@ async def preview_system_prompt(world: str):
     return {"preview": prompt}
 
 
+# ---- Templates: Export / Import ----
+
+@router.get("/templates/{world}/export")
+async def export_world(world: str):
+    world_data = prompt_engine.load_world(world)
+    player_data = prompt_engine.load_player(world)
+    prefs_data = prompt_engine.load_preferences(world)
+    if world_data is None:
+        raise HTTPException(status_code=404, detail=f"World '{world}' not found")
+    return {
+        "world": world_data,
+        "player": player_data or {},
+        "preferences": prefs_data or {},
+    }
+
+
+IMPORT_PROMPT = """你是一个游戏世界观文件解析器。下面是用户上传的文件内容。
+如果是结构化的 YAML 格式，直接输出优化后的 YAML。
+如果是纯文本故事描述，提取其中的世界设定生成 YAML 格式。
+
+请严格按照以下格式输出（三个 YAML 块）：
+
+```yaml
+# world.yaml
+name: 英文 slug
+description: |
+  世界观描述
+starting_scene: |
+  {{player_name}}开场场景
+```
+
+```yaml
+# player.yaml
+name: 角色名
+description: 简介
+background: |
+  背景故事
+```
+
+```yaml
+# preferences.yaml
+narrative_style: |
+  叙事风格
+tone: 语调
+pacing: 节奏
+detail_level: 细节程度
+```
+
+文件内容：
+{content}"""
+
+
+@router.post("/templates/import")
+async def import_world(body: dict):
+    content = body.get("content", "").strip()
+    filename = body.get("filename", "imported.txt").strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="No content provided")
+
+    detected_name = re.search(r"^name:\s*(\S+)", content, re.MULTILINE)
+
+    if detected_name:
+        files = _parse_yaml_files(content)
+        if files and "world" in files:
+            wname = re.sub(r"[^a-z0-9_]", "_", detected_name.group(1).lower())[:30]
+            _save_world_files(wname, files)
+            return {"world": wname, "files": list(files.keys()), "source": "parsed"}
+
+    try:
+        result = await llm_client.chat([
+            {"role": "user", "content": IMPORT_PROMPT.format(content=content[:8000])}
+        ])
+        raw = result["choices"][0]["message"]["content"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
+
+    world_name, files = _parse_world_gen(raw, _basename(filename))
+    if world_name is None:
+        raise HTTPException(status_code=500, detail="Failed to parse imported content")
+
+    _save_world_files(world_name, files)
+    return {"world": world_name, "files": list(files.keys()), "source": "ai_parsed"}
+
+
+def _parse_yaml_files(text: str) -> dict | None:
+    sections = {}
+    current_file = None
+    current_lines = []
+    for line in text.split("\n"):
+        m = re.match(r"^#\s*(world|player|preferences)\.yaml", line)
+        if m:
+            if current_file:
+                sections[current_file] = "\n".join(current_lines).strip()
+            current_file = m.group(1)
+            current_lines = []
+            continue
+        if current_file:
+            current_lines.append(line)
+    if current_file and current_lines:
+        sections[current_file] = "\n".join(current_lines).strip()
+    return sections if "world" in sections else None
+
+
+def _save_world_files(world_name: str, files: dict) -> None:
+    for filename, content in files.items():
+        path = settings.templates_dir / "worlds" / world_name / filename
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+
+def _basename(filename: str) -> str:
+    name = filename.rsplit(".", 1)[0] if "." in filename else filename
+    return re.sub(r"[^a-z0-9_]", "_", name.lower())[:30]
+
+
+# ---- Templates: AI Generate ----
+
 WORLD_GEN_PROMPT = """你是一个游戏世界观设计师。根据用户提供的概念，生成一套完整的文字冒险游戏设定。
 
 请严格按照以下 YAML 格式输出，不要添加任何额外说明文字：
@@ -194,7 +313,6 @@ async def generate_world(body: dict):
     concept = body.get("concept", "").strip()
     if not concept:
         raise HTTPException(status_code=400, detail="Concept is required")
-
     try:
         result = await llm_client.chat([
             {"role": "user", "content": WORLD_GEN_PROMPT.format(concept=concept)}
@@ -202,27 +320,21 @@ async def generate_world(body: dict):
         raw = result["choices"][0]["message"]["content"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
-
     world_name, world_files = _parse_world_gen(raw, concept)
     if world_name is None:
         raise HTTPException(status_code=500, detail="Failed to parse AI output")
-
     for filename, content in world_files.items():
         path = settings.templates_dir / "worlds" / world_name / filename
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
-
     return {"world": world_name, "files": list(world_files.keys())}
 
 
 def _parse_world_gen(raw: str, concept: str):
-    import re
-
     sections = {}
     current_file = None
     current_lines = []
-
     for line in raw.split("\n"):
         if re.match(r"^```yaml\s*$", line):
             continue
@@ -240,33 +352,18 @@ def _parse_world_gen(raw: str, concept: str):
             continue
         if current_file:
             current_lines.append(line)
-
     if current_file and current_lines:
         sections[current_file] = "\n".join(current_lines).strip()
-
     if "world" not in sections:
         return _fallback_parse(raw, concept)
-
     world_yaml = sections["world"]
-    player_yaml = sections.get("player", """name: 冒险者
-description: 一位冒险者
-background: 普通出身""")
-    prefs_yaml = sections.get("preferences", f"""narrative_style: 生动的叙事风格
-tone: 适合{concept}的语调
-pacing: 适中
-detail_level: 适中""")
-
-    world_name = _extract_world_name(world_yaml, concept)
-
-    return world_name, {
-        "world.yaml": world_yaml,
-        "player.yaml": player_yaml,
-        "preferences.yaml": prefs_yaml,
-    }
+    player_yaml = sections.get("player", "name: 冒险者\ndescription: 一位冒险者\nbackground: 普通出身")
+    prefs_yaml = sections.get("preferences", f"narrative_style: 生动的叙事风格\ntone: 适合{concept}的语调\npacing: 适中\ndetail_level: 适中")
+    world_name = _extract_name(world_yaml, concept)
+    return world_name, {"world.yaml": world_yaml, "player.yaml": player_yaml, "preferences.yaml": prefs_yaml}
 
 
-def _extract_world_name(yaml_str: str, fallback: str) -> str:
-    import re
+def _extract_name(yaml_str: str, fallback: str) -> str:
     m = re.search(r"^name:\s*(\S+)", yaml_str, re.MULTILINE)
     if m:
         name = m.group(1).lower().replace(" ", "_")
@@ -275,27 +372,12 @@ def _extract_world_name(yaml_str: str, fallback: str) -> str:
 
 
 def _fallback_parse(raw: str, concept: str):
-    import re
-    world_name = re.sub(r"[^a-z0-9_]", "_", concept.lower().replace(" ", "_"))[:20]
-    safe_concept = concept.replace('"', "'")
-
-    return world_name, {
-        "world.yaml": f"""name: {safe_concept}
-description: |
-  这是一个以「{safe_concept}」为主题的世界。
-
-starting_scene: |
-  {{player_name}}睁开双眼，发现自己正处在一个陌生的环境中。
-  周围的一切都在诉说着这个世界的规则...
-  冒险即将开始。""",
-        "player.yaml": f"""name: 冒险者
-description: 一位来到这个世界的冒险者
-background: 怀着对未知的好奇，踏入了这个世界的门槛""",
-        "preferences.yaml": f"""narrative_style: |
-  生动的叙事风格，注重环境描写。
-tone: 认真与轻松并存
-pacing: 适中
-detail_level: 丰富""",
+    wname = re.sub(r"[^a-z0-9_]", "_", concept.lower().replace(" ", "_"))[:20]
+    safe = concept.replace('"', "'")
+    return wname, {
+        "world.yaml": f"name: {safe}\ndescription: |\n  这是一个以「{safe}」为主题的世界。\n\nstarting_scene: |\n  {{player_name}}睁开双眼，发现自己正处在一个陌生的环境中。",
+        "player.yaml": "name: 冒险者\ndescription: 一位来到这个世界的冒险者\nbackground: 怀着对未知的好奇，踏入了这个世界的门槛",
+        "preferences.yaml": "narrative_style: |\n  生动的叙事风格，注重环境描写。\ntone: 认真与轻松并存\npacing: 适中\ndetail_level: 丰富",
     }
 
 
@@ -304,11 +386,7 @@ detail_level: 丰富""",
 @router.post("/game/new", response_model=NewGameResponse)
 async def new_game(body: NewGameRequest):
     game_id = session_manager.create(body.world, body.player_name)
-    return NewGameResponse(
-        game_id=game_id,
-        world=body.world,
-        player_name=body.player_name,
-    )
+    return NewGameResponse(game_id=game_id, world=body.world, player_name=body.player_name)
 
 
 @router.post("/game/{game_id}/start")
@@ -316,44 +394,29 @@ async def start_game(game_id: str):
     session = session_manager.load(game_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-
     if session["messages"]:
         return {"status": "already_started"}
-
     game_state = session.get("game_state", {})
-    system_prompt = prompt_engine.render_system_prompt(
-        session["world"], session["player_name"], game_state
-    )
-    first_scene = prompt_engine.render_first_message(
-        session["world"], session["player_name"]
-    )
+    system_prompt = prompt_engine.render_system_prompt(session["world"], session["player_name"], game_state)
+    first_scene = prompt_engine.render_first_message(session["world"], session["player_name"])
     starter = f"{system_prompt}\n\n现在开始游戏。玩家当前场景参考：{first_scene[:100]}..."
     if "首先，请为这个场景开场" not in starter:
         starter += "\n请以生动叙事开场，不要重复上述场景参考的原文。"
-
     messages = [{"role": "system", "content": starter}, {"role": "user", "content": "(游戏开始)"}]
-
     try:
         result = await llm_client.chat(messages)
         raw_reply = result["choices"][0]["message"]["content"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
-
     session["messages"].append({"role": "user", "content": "(游戏开始)", "tape": "normal"})
     session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
     session["turn"] = 1
-
     parsed = _build_and_tag(session, raw_reply)
-
     if parsed["state_updates"]:
-        session["game_state"] = prompt_engine.apply_state_updates(
-            game_state, parsed["state_updates"]
-        )
+        session["game_state"] = prompt_engine.apply_state_updates(game_state, parsed["state_updates"])
     if parsed["suggestions"]:
         session["suggestions"] = parsed["suggestions"]
-
     session_manager.save(game_id, session)
-
     return {
         "content": parsed["narrate"] or raw_reply,
         "thought": parsed["thought"],
@@ -368,37 +431,23 @@ async def game_action(game_id: str, body: GameAction):
     session = session_manager.load(game_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-
     game_state = session.get("game_state", {})
-    system_prompt = prompt_engine.render_system_prompt(
-        session["world"], session["player_name"], game_state
-    )
-
-    messages = assemble_messages(
-        session, system_prompt, settings.context_limit, body.action
-    )
-
+    system_prompt = prompt_engine.render_system_prompt(session["world"], session["player_name"], game_state)
+    messages = assemble_messages(session, system_prompt, settings.context_limit, body.action)
     try:
         result = await llm_client.chat(messages)
         raw_reply = result["choices"][0]["message"]["content"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
-
     session["messages"].append({"role": "user", "content": body.action, "tape": "normal"})
     session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
     session["turn"] += 1
-
     parsed = _build_and_tag(session, raw_reply)
-
     if parsed["state_updates"]:
-        session["game_state"] = prompt_engine.apply_state_updates(
-            game_state, parsed["state_updates"]
-        )
+        session["game_state"] = prompt_engine.apply_state_updates(game_state, parsed["state_updates"])
     if parsed["suggestions"]:
         session["suggestions"] = parsed["suggestions"]
-
     session_manager.save(game_id, session)
-
     return {
         "content": parsed["narrate"] or raw_reply,
         "thought": parsed["thought"],
@@ -413,15 +462,9 @@ async def game_action_stream(game_id: str, body: GameAction):
     session = session_manager.load(game_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-
     game_state = session.get("game_state", {})
-    system_prompt = prompt_engine.render_system_prompt(
-        session["world"], session["player_name"], game_state
-    )
-
-    messages = assemble_messages(
-        session, system_prompt, settings.context_limit, body.action
-    )
+    system_prompt = prompt_engine.render_system_prompt(session["world"], session["player_name"], game_state)
+    messages = assemble_messages(session, system_prompt, settings.context_limit, body.action)
 
     async def stream_response():
         full_reply = ""
@@ -440,20 +483,15 @@ async def game_action_stream(game_id: str, body: GameAction):
                 session["turn"] += 1
                 parsed = _build_and_tag(session, full_reply)
                 if parsed["state_updates"]:
-                    session["game_state"] = prompt_engine.apply_state_updates(
-                        game_state, parsed["state_updates"]
-                    )
+                    session["game_state"] = prompt_engine.apply_state_updates(game_state, parsed["state_updates"])
                 if parsed["suggestions"]:
                     session["suggestions"] = parsed["suggestions"]
                 session_manager.save(game_id, session)
                 yield f"data: {json.dumps({'parsed': {'suggestions': parsed['suggestions'], 'state': session['game_state']}})}\n\n"
         yield "data: [DONE]\n\n"
 
-    return StreamingResponse(
-        stream_response(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    return StreamingResponse(stream_response(), media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @router.get("/game/{game_id}/history")
@@ -481,15 +519,7 @@ async def game_tokens(game_id: str):
     session = session_manager.load(game_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-
-    system_prompt = prompt_engine.render_system_prompt(
-        session["world"], session["player_name"], session.get("game_state", {})
-    )
-
+    system_prompt = prompt_engine.render_system_prompt(session["world"], session["player_name"], session.get("game_state", {}))
     msgs = assemble_messages(session, system_prompt, settings.context_limit)
     used = count_messages(msgs)
-    return {
-        "used": used,
-        "budget": settings.context_limit,
-        "percent": round(used / max(settings.context_limit, 1) * 100, 1),
-    }
+    return {"used": used, "budget": settings.context_limit, "percent": round(used / max(settings.context_limit, 1) * 100, 1)}
