@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { GameSession } from "../services/api";
 import { getGameHistory, sendActionStream } from "../services/api";
+import { useTypewriter } from "../hooks/useTypewriter";
 
 interface Props {
   gameId: string;
@@ -16,6 +17,10 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [gameState, setGameState] = useState<Record<string, unknown>>({});
   const [error, setError] = useState("");
+  const { displayText: typewriterText, flush: flushTypewriter } = useTypewriter({
+    text: streamingText,
+    isActive: loading,
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -25,7 +30,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [session?.messages, streamingText]);
+  }, [session?.messages, streamingText, typewriterText]);
 
   async function loadSession() {
     try {
@@ -62,14 +67,18 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         setGameState(newState);
       },
       () => {
-        setStreamingText("");
-        loadSession();
-        setLoading(false);
+        flushTypewriter();
+        loadSession().then(() => {
+          setStreamingText("");
+          setLoading(false);
+        });
       },
       (err) => {
         setError(err);
-        loadSession();
-        setLoading(false);
+        loadSession().then(() => {
+          setStreamingText("");
+          setLoading(false);
+        });
       }
     );
   }
@@ -110,18 +119,13 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
               {displayContent(msg.content)}
             </div>
           ))}
-          {streamingText && (
+          {typewriterText && (
             <div className="message assistant">
               <div className="role-label">GM</div>
-              {streamingText
-                .replace(/<thought>[\s\S]*?<\/thought>/g, "")
-                .replace(/<state>[\s\S]*?<\/state>/g, "")
-                .replace(/<suggestions>[\s\S]*?<\/suggestions>/g, "")
-                .replace(/<\/?narrate>/g, "")
-                .trim()}
+              {typewriterText}
             </div>
           )}
-          {loading && !streamingText && (
+          {loading && !typewriterText && (
             <div className="message assistant">
               <div className="role-label">GM</div>
               Generating...
