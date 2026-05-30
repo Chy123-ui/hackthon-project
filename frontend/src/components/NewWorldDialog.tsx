@@ -24,8 +24,8 @@ export default function NewWorldDialog({ onCreated, onError }: Props) {
   const [generating, setGenerating] = useState(false);
   const example = useRef(EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)]);
 
-  async function handleGenerate() {
-    const c = concept.trim();
+  async function handleGenerate(optConcept?: string) {
+    const c = (optConcept ?? concept).trim();
     if (!c) return;
     setGenerating(true);
     try {
@@ -61,7 +61,12 @@ export default function NewWorldDialog({ onCreated, onError }: Props) {
           placeholder={`e.g. "${example.current}"`}
           value={concept}
           onChange={(e) => setConcept(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !generating) {
+              const c = concept.trim() || example.current;
+              if (c) { setConcept(c); handleGenerate(c); }
+            }
+          }}
           disabled={generating}
           style={{
             flex: 1,
@@ -75,8 +80,8 @@ export default function NewWorldDialog({ onCreated, onError }: Props) {
         />
         <button
           className="primary"
-          onClick={handleGenerate}
-          disabled={generating || !concept.trim()}
+          onClick={() => handleGenerate()}
+          disabled={generating}
         >
           {generating ? "Generating..." : "Generate"}
         </button>
