@@ -87,7 +87,7 @@ export default function SettingsPanel() {
           placeholder="4096"
           value={config.max_tokens ?? ""}
           onChange={(e) =>
-            setConfig({ ...config, max_tokens: Number(e.target.value) })
+            setConfig({ ...config, max_tokens: e.target.value ? Number(e.target.value) : undefined })
           }
         />
       </div>
@@ -102,7 +102,7 @@ export default function SettingsPanel() {
           placeholder="0.8"
           value={config.temperature ?? ""}
           onChange={(e) =>
-            setConfig({ ...config, temperature: Number(e.target.value) })
+            setConfig({ ...config, temperature: e.target.value ? Number(e.target.value) : undefined })
           }
         />
       </div>

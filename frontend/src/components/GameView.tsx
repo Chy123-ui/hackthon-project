@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GameListItem } from "../services/api";
 import {
   listGames,
@@ -6,6 +6,7 @@ import {
   startGame,
   deleteGame,
   listWorlds,
+  getPlayerTemplate,
 } from "../services/api";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 import GameChat from "./GameChat";
@@ -14,16 +15,34 @@ import SessionList, { sortByUpdatedDesc } from "./SessionList";
 export default function GameView() {
   const [sessions, setSessions] = useState<GameListItem[]>([]);
   const [worlds, setWorlds] = useState<string[]>([]);
-  const [playerName, setPlayerName] = useState("冒险者");
+  const [playerName, setPlayerName] = useState("");
+  const [placeholderName, setPlaceholderName] = useState("冒险者");
   const [selectedWorld, setSelectedWorld] = useState("fantasy");
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const defaultNameRef = useRef("冒险者");
+  const firstLoadRef = useRef(true);
 
   useEffect(() => {
     loadAll();
   }, []);
+
+  useEffect(() => {
+    if (firstLoadRef.current) { firstLoadRef.current = false; return; }
+    getPlayerTemplate(selectedWorld)
+      .then((data) => {
+        const name = data && typeof data === "object" && "name" in data
+          ? String((data as Record<string, unknown>).name)
+          : "";
+        if (name) {
+          setPlaceholderName(name);
+          defaultNameRef.current = name;
+        }
+      })
+      .catch(() => {});
+  }, [selectedWorld]);
 
   async function loadAll() {
     try {
@@ -43,7 +62,10 @@ export default function GameView() {
     try {
       setLoading(true);
       setError("");
-      const { game_id } = await newGame(selectedWorld, playerName);
+      const { game_id } = await newGame(
+        selectedWorld,
+        playerName.trim() || defaultNameRef.current
+      );
       await startGame(game_id);
       setActiveSession(game_id);
       await loadAll();
@@ -129,7 +151,7 @@ export default function GameView() {
       <div className="new-game-form">
         <input
           type="text"
-          placeholder="Player Name"
+          placeholder={placeholderName}
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
         />

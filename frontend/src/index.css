@@ -208,6 +208,11 @@ body {
   font-size: 14px;
 }
 
+.new-game-form input::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
 .new-game-form button,
 button.primary {
   padding: 10px 24px;
@@ -386,7 +391,7 @@ button:disabled {
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 13px;
-  resize: vertical;
+  resize: none;
 }
 
 .template-column textarea:focus {
@@ -443,6 +448,15 @@ button:disabled {
 .form-group input:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.form-group input[type="number"]::-webkit-inner-spin-button,
+.form-group input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.form-group input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 button.secondary {

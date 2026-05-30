@@ -23,6 +23,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [streamComplete, setStreamComplete] = useState(false);
   const finalizingRef = useRef(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const bufferedSuggestionsRef = useRef<string[]>([]);
   const [gameState, setGameState] = useState<Record<string, unknown>>({});
   const [error, setError] = useState("");
   const [tokens, setTokens] = useState<{ used: number; budget: number; percent: number } | null>(null);
@@ -48,6 +49,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
 
     finalizingRef.current = true;
     loadSession().then(() => {
+      setSuggestions(bufferedSuggestionsRef.current);
       setStreamingText("");
       setDisplayStream("");
       setStreamComplete(false);
@@ -80,6 +82,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     finalizingRef.current = false;
     streamRef.current = new StreamDisplay();
     setSuggestions([]);
+    bufferedSuggestionsRef.current = [];
     setError("");
 
     setSession((prev) =>
@@ -97,10 +100,10 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
       (chunk) => {
         setStreamingText((prev) => prev + chunk);
         const d = streamRef.current.feed(chunk);
-        if (d) setDisplayStream((prev) => prev + d);
+        if (d) setDisplayStream(d);
       },
       (newSuggestions, newState) => {
-        setSuggestions(newSuggestions);
+        bufferedSuggestionsRef.current = newSuggestions;
         setGameState(newState);
       },
       () => {
@@ -125,6 +128,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     abortRef.current?.abort();
     abortRef.current = null;
     loadSession().then(() => {
+      setSuggestions(bufferedSuggestionsRef.current);
       setStreamingText("");
       setDisplayStream("");
       setStreamComplete(false);
@@ -152,7 +156,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
               playerName={playerName}
             />
           ))}
-          {typewriterText && (
+          {loading && typewriterText && (
             <div className="message assistant">
               <div className="role-label">GM</div>
               <div className="assistant-content">
