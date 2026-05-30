@@ -13,7 +13,7 @@ if not exist ".venv\Scripts\python.exe" (
     python -m venv .venv
 )
 echo [2/3] Syncing Python dependencies...
-.venv\Scripts\pip install -q -r requirements.txt
+.venv\Scripts\pip install -q -r requirements.txt --timeout 120 --retries 3
 echo   Done.
 
 cd /d "%~dp0frontend"

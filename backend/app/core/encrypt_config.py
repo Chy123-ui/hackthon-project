@@ -1,15 +1,22 @@
-"""Config encryption -- Fernet symmetric encryption for api_key"""
-import base64
+"""Config encryption -- Fernet symmetric encryption for api_key.
+Falls back to plaintext if cryptography package is not installed."""
 import os
-from cryptography.fernet import Fernet
 from .config import settings
+
+try:
+    from cryptography.fernet import Fernet
+    _HAS_CRYPTO = True
+except ImportError:
+    _HAS_CRYPTO = False
 
 
 def _key_path():
     return settings.data_dir / ".key"
 
 
-def _get_fernet() -> Fernet:
+def _get_fernet():
+    if not _HAS_CRYPTO:
+        return None
     path = _key_path()
     if path.exists():
         key = path.read_bytes()
@@ -20,7 +27,7 @@ def _get_fernet() -> Fernet:
 
 
 def encrypt_api_key(config: dict) -> dict:
-    if not config.get("api_key"):
+    if not _HAS_CRYPTO or not config.get("api_key"):
         return config
     data = {"api_key": config["api_key"]}
     for k in list(config.keys()):
@@ -33,7 +40,7 @@ def encrypt_api_key(config: dict) -> dict:
 
 
 def decrypt_config(config: dict) -> dict:
-    if not config.get("_encrypted") or not config.get("api_key"):
+    if not _HAS_CRYPTO or not config.get("_encrypted") or not config.get("api_key"):
         return config
     f = _get_fernet()
     try:
