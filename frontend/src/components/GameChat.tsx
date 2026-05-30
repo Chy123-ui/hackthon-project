@@ -19,11 +19,13 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [streamingText, setStreamingText] = useState("");
   const streamRef = useRef(new StreamDisplay());
   const [displayStream, setDisplayStream] = useState("");
+  const [streamComplete, setStreamComplete] = useState(false);
+  const finalizingRef = useRef(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [gameState, setGameState] = useState<Record<string, unknown>>({});
   const [error, setError] = useState("");
-  const { displayText: typewriterText, flush: flushTypewriter } = useTypewriter({
-    text: streamingText,
+  const { displayText: typewriterText, isComplete: typewriterComplete } = useTypewriter({
+    text: displayStream,
     isActive: loading,
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -36,6 +38,20 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [session?.messages, streamingText, typewriterText]);
+
+  useEffect(() => {
+    const shouldFinalize = streamComplete && (typewriterComplete || displayStream.length === 0);
+    if (!shouldFinalize || finalizingRef.current) return;
+
+    finalizingRef.current = true;
+    loadSession().then(() => {
+      setStreamingText("");
+      setDisplayStream("");
+      setStreamComplete(false);
+      setLoading(false);
+      finalizingRef.current = false;
+    });
+  }, [displayStream.length, streamComplete, typewriterComplete]);
 
   async function loadSession() {
     try {
@@ -54,6 +70,8 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     setLoading(true);
     setStreamingText("");
     setDisplayStream("");
+    setStreamComplete(false);
+    finalizingRef.current = false;
     streamRef.current = new StreamDisplay();
     setSuggestions([]);
     setError("");
@@ -77,16 +95,14 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         setGameState(newState);
       },
       () => {
-        flushTypewriter();
-        loadSession().then(() => {
-          setStreamingText("");
-          setLoading(false);
-        });
+        setStreamComplete(true);
       },
       (err) => {
         setError(err);
         loadSession().then(() => {
           setStreamingText("");
+          setDisplayStream("");
+          setStreamComplete(false);
           setLoading(false);
         });
       }
@@ -116,10 +132,9 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
             <div className="message assistant">
               <div className="role-label">GM</div>
               <div className="narrate-block streaming">
-                {displayStream}
+                {typewriterText}
                 <span className="typing-cursor" />
               </div>
-              {typewriterText}
             </div>
           )}
           {loading && !typewriterText && (

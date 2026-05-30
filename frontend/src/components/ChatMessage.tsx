@@ -1,4 +1,5 @@
 import { extractTag, displayNarrate, highlightDialogue } from "../hooks/useGameStream";
+import ThoughtToggle from "./ThoughtToggle";
 
 interface Props {
   role: string;
@@ -23,11 +24,7 @@ export default function ChatMessage({ role, content, playerName }: Props) {
     <div className="message assistant">
       <div className="role-label">GM</div>
       <div className="assistant-content">
-        {thought && (
-          <div className="thought-block visible">
-            <div className="thought-text">{thought}</div>
-          </div>
-        )}
+        {thought && <ThoughtToggle thought={thought} />}
         <div className="narrate-block">{highlightDialogue(narrate)}</div>
       </div>
     </div>

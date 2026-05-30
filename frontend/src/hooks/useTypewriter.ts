@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 
 /**
  * Strip XML/HTML tags from raw text.
@@ -30,7 +30,6 @@ interface UseTypewriterOptions {
  *
  * Returns:
  *  - displayText: the current revealed portion, with tags stripped.
- *  - flush:        immediately show all remaining text (called on stream end).
  */
 export function useTypewriter({ text, isActive, speed = 30 }: UseTypewriterOptions) {
   const [displayText, setDisplayText] = useState("");
@@ -67,12 +66,7 @@ export function useTypewriter({ text, isActive, speed = 30 }: UseTypewriterOptio
     return () => clearInterval(timer);
   }, [isActive, speed]);
 
-  // Immediately reveal all remaining text (used when the stream finishes)
-  const flush = useCallback(() => {
-    const full = cleanTextRef.current;
-    positionRef.current = full.length;
-    setDisplayText(full);
-  }, []);
+  const isComplete = cleanTextRef.current.length > 0 && positionRef.current >= cleanTextRef.current.length;
 
-  return { displayText, flush };
+  return { displayText, isComplete };
 }

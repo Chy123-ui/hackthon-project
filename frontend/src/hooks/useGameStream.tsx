@@ -24,7 +24,7 @@ export function displayNarrate(raw: string): string {
 export class StreamDisplay {
   private buffer = "";
   private mode: "idle" | "thought" | "narrate" | "state" | "suggestions" = "idle";
-  private _lastLen = 0;
+  private readonly tags = ["thought", "narrate", "state", "suggestions"] as const;
 
   feed(chunk: string): string {
     this.buffer += chunk;
@@ -33,7 +33,10 @@ export class StreamDisplay {
     while (this.buffer.length > 0) {
       if (this.mode === "idle") {
         const tag = this._nextTag();
-        if (!tag) break;
+        if (!tag) {
+          this.buffer = this._keepPossibleOpeningTag(this.buffer);
+          break;
+        }
         this.mode = tag as typeof this.mode;
         this.buffer = this.buffer.slice(this.buffer.indexOf(`<${tag}>`) + tag.length + 2);
         continue;
@@ -42,7 +45,10 @@ export class StreamDisplay {
       const closeTag = `</${this.mode}>`;
       const idx = this.buffer.indexOf(closeTag);
       if (idx === -1) {
-        if (this.mode === "narrate") output.push(this.buffer);
+        const pendingClose = this._pendingCloseLength(this.buffer, closeTag);
+        const emitText = this.buffer.slice(0, this.buffer.length - pendingClose);
+        if (this.mode === "narrate") output.push(emitText);
+        this.buffer = this.buffer.slice(this.buffer.length - pendingClose);
         break;
       }
 
@@ -51,23 +57,38 @@ export class StreamDisplay {
       this.mode = "idle";
     }
 
-    if (this.mode === "idle" && this.buffer.length > 0) {
-      const next = this._nextTag();
-      if (!next) this.buffer = "";
-    }
-
-    const full = output.join("");
-    const delta = full.slice(this._lastLen);
-    this._lastLen = full.length;
-    return delta;
+    return output.join("");
   }
 
   private _nextTag(): string | null {
-    const tags = ["thought", "narrate", "state", "suggestions"];
-    for (const t of tags) {
-      if (this.buffer.includes(`<${t}>`)) return t;
+    let found: { tag: string; index: number } | null = null;
+    for (const tag of this.tags) {
+      const index = this.buffer.indexOf(`<${tag}>`);
+      if (index !== -1 && (!found || index < found.index)) {
+        found = { tag, index };
+      }
     }
-    return null;
+    return found?.tag ?? null;
+  }
+
+  private _keepPossibleOpeningTag(text: string): string {
+    for (let i = Math.max(0, text.length - "<suggestions>".length + 1); i < text.length; i += 1) {
+      const suffix = text.slice(i);
+      if (this.tags.some((tag) => `<${tag}>`.startsWith(suffix))) {
+        return suffix;
+      }
+    }
+    return "";
+  }
+
+  private _pendingCloseLength(text: string, closeTag: string): number {
+    const max = Math.min(text.length, closeTag.length - 1);
+    for (let len = max; len > 0; len -= 1) {
+      if (closeTag.startsWith(text.slice(text.length - len))) {
+        return len;
+      }
+    }
+    return 0;
   }
 }
 

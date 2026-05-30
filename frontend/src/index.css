@@ -475,6 +475,12 @@ button.danger:hover {
 }
 
 .thought-toggle {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  font-family: var(--font-sans);
+  text-align: left;
   font-size: 11px;
   color: var(--text-secondary);
   cursor: pointer;
@@ -507,11 +513,6 @@ button.danger:hover {
 .narrate-block {
   line-height: 1.8;
   white-space: pre-wrap;
-}
-
-.narrate-block.streaming {
-  border-left: 2px solid var(--accent);
-  padding-left: 10px;
 }
 
 .dialogue {
