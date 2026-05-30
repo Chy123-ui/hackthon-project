@@ -39,7 +39,7 @@ export default function WorldFileEditor({
       <div style={{ position: "fixed", inset: 0, zIndex: 900, background: "var(--bg)", padding: 16, display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
           <h3>{activeFile}.yaml</h3>
-          <button className="secondary" onClick={() => setFullscreen(null)}>Close</button>
+          <button className="secondary" onClick={() => setFullscreen(null)}>关闭</button>
         </div>
         <textarea
           value={fileData}
@@ -55,7 +55,7 @@ export default function WorldFileEditor({
       <div style={{ position: "fixed", inset: 0, zIndex: 900, background: "var(--bg)", padding: 16, display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
           <h3>System Prompt Preview</h3>
-          <button className="secondary" onClick={() => setFullscreen(null)}>Close</button>
+          <button className="secondary" onClick={() => setFullscreen(null)}>关闭</button>
         </div>
         <textarea readOnly value={preview} style={{ flex: 1, padding: 12, background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 14, resize: "none" }} />
       </div>
@@ -71,9 +71,9 @@ export default function WorldFileEditor({
         {fileLabels.map((f) => (
           <button key={f} className={`tab-btn ${activeFile === f ? "active" : ""}`} onClick={() => onSelectFile(f)} style={{ padding: "8px 16px", fontSize: 13 }}>{f}</button>
         ))}
-        <button className="secondary" onClick={onAiAssist} style={{ fontSize: 13 }}>AI Modify</button>
-        <button className="primary" onClick={onSave} disabled={saving}>{saving ? "Saving..." : `Save ${activeFile}`}</button>
-        {status === "saved" && <span className="status-badge saved">Saved</span>}
+        <button className="secondary" onClick={onAiAssist} style={{ fontSize: 13 }}>AI 修改</button>
+        <button className="primary" onClick={onSave} disabled={saving}>{saving ? "保存中..." : `保存 ${activeFile}`}</button>
+        {status === "saved" && <span className="status-badge saved">已保存</span>}
         {status.startsWith("error") && <span className="status-badge error">{status}</span>}
       </div>
 
@@ -81,7 +81,7 @@ export default function WorldFileEditor({
         <div className="template-column" style={{ position: "relative" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3>{activeFile}.yaml</h3>
-            <button className="secondary" onClick={() => setFullscreen("edit")} style={{ fontSize: 11, padding: "2px 8px" }}>Full</button>
+            <button className="secondary" onClick={() => setFullscreen("edit")} style={{ fontSize: 11, padding: "2px 8px" }}>全屏</button>
           </div>
           <textarea value={fileData}
             onChange={(e) => onFileDataChange(e.target.value)}
@@ -90,8 +90,8 @@ export default function WorldFileEditor({
         </div>
         <div className="template-column" style={{ position: "relative" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3>System Prompt Preview</h3>
-            <button className="secondary" onClick={() => setFullscreen("preview")} style={{ fontSize: 11, padding: "2px 8px" }}>Full</button>
+          <h3>提示词预览</h3>
+            <button className="secondary" onClick={() => setFullscreen("preview")} style={{ fontSize: 11, padding: "2px 8px" }}>全屏</button>
           </div>
           <textarea readOnly value={preview}
             style={{ padding: 12, background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13, resize: "none", overflowY: "auto" }}

@@ -138,7 +138,7 @@ export default function GameView({ searchQuery = "" }: Props) {
               marginBottom: 8,
             }}
           >
-            Continue Playing
+            继续游戏
           </h3>
           <SessionList
             sessions={visibleSessions}
@@ -155,7 +155,7 @@ export default function GameView({ searchQuery = "" }: Props) {
           marginBottom: 8,
         }}
       >
-        {sessions.length > 0 ? "Or Start a New Game" : "Start a New Game"}
+        {sessions.length > 0 ? "或开始新游戏" : "开始新游戏"}
       </h3>
 
       <div className="new-game-form">
@@ -176,7 +176,7 @@ export default function GameView({ searchQuery = "" }: Props) {
           ))}
         </select>
         <button onClick={handleNewGame} disabled={loading}>
-          {loading ? "Creating..." : "New Game"}
+          {loading ? "创建中..." : "新游戏"}
         </button>
       </div>
     </div>

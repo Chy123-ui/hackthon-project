@@ -109,28 +109,28 @@ export default function NewWorldDialog({ onCreated, onError, onClose }: Props) {
       border: "1px solid var(--accent)", borderRadius: "var(--radius)",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <h3 style={{ color: "var(--accent)", fontSize: 14 }}>New World</h3>
-        <button className="secondary" style={{ fontSize: 12, padding: "2px 10px" }} onClick={onClose}>Close</button>
+        <h3 style={{ color: "var(--accent)", fontSize: 14 }}>新建世界</h3>
+        <button className="secondary" style={{ fontSize: 12, padding: "2px 10px" }} onClick={onClose}>关闭</button>
       </div>
 
       <div style={{ display: "flex", gap: 0, marginBottom: 12, borderBottom: "1px solid var(--border)" }}>
         <button className={`tab-btn ${tab === "ai" ? "active" : ""}`} onClick={() => setTab("ai")} style={{ fontSize: 13 }}>
-          AI Generate
+          AI 生成
         </button>
         <button className={`tab-btn ${tab === "import" ? "active" : ""}`} onClick={() => setTab("import")} style={{ fontSize: 13 }}>
-          Import File
+          导入文件
         </button>
       </div>
 
       {tab === "ai" && (
         <>
           <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
-            Describe a world concept. AI will create all three templates.
+            描述一个世界概念，AI 将生成完整的模板。
           </p>
           <div style={{ display: "flex", gap: 8 }}>
             <input
               type="text"
-              placeholder={`e.g. "${example.current}"`}
+              placeholder={`例如 "${example.current}"`}
               value={concept}
               onChange={(e) => setConcept(e.target.value)}
               onKeyDown={(e) => {
@@ -148,7 +148,7 @@ export default function NewWorldDialog({ onCreated, onError, onClose }: Props) {
               }}
             />
             <button className="primary" onClick={() => handleGenerate()} disabled={generating}>
-              {generating ? "Generating..." : "Generate"}
+              {generating ? "生成中..." : "生成"}
             </button>
           </div>
         </>
@@ -157,8 +157,7 @@ export default function NewWorldDialog({ onCreated, onError, onClose }: Props) {
       {tab === "import" && (
         <>
           <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
-            Upload a file (.txt, .json, .docx, .doc, .md, .yaml).
-            AI will extract and create the world from it.
+            上传文件 (.txt, .json, .docx, .doc, .md, .yaml)，AI 将从中提取并创建世界。
           </p>
           <input
             ref={fileRef}
@@ -173,7 +172,7 @@ export default function NewWorldDialog({ onCreated, onError, onClose }: Props) {
             disabled={generating}
             style={{ padding: "10px 24px" }}
           >
-            {generating ? "Importing..." : "Choose File"}
+            {generating ? "导入中..." : "选择文件"}
           </button>
           {importFile && (
             <span style={{ marginLeft: 8, color: "var(--text-secondary)", fontSize: 13 }}>

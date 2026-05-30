@@ -47,10 +47,10 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
 
   return (
     <div className="settings-view">
-      <h2>Settings</h2>
+      <h2>设置</h2>
 
       {loading && (
-        <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Loading...</p>
+        <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>加载中...</p>
       )}
 
       {status.startsWith("error") && (
@@ -86,10 +86,10 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
 
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button className="primary" onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "Save Settings"}
+          {saving ? "保存中..." : "保存设置"}
         </button>
         {status === "saved" && (
-          <span className="status-badge saved">Saved</span>
+          <span className="status-badge saved">已保存</span>
         )}
       </div>
     </div>

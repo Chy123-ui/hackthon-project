@@ -109,9 +109,9 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
     return (
       <div className="template-view">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <h2>Editing: {selectedWorld}</h2>
+          <h2>编辑: {selectedWorld}</h2>
           <button className="secondary" onClick={() => { setEditing(false); loadAll(); }}>
-            Back to Templates
+            返回模板
           </button>
         </div>
 
@@ -122,14 +122,14 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
             opacity: aiModifying ? 0.6 : 1, pointerEvents: aiModifying ? "none" : "auto",
           }}>
             <h3 style={{ color: "var(--accent)", fontSize: 14, marginBottom: 8 }}>
-              AI Modify "{selectedWorld}" {aiModifying && <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>— working...</span>}
+              AI 修改 "{selectedWorld}" {aiModifying && <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>— 处理中...</span>}
             </h3>
             <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
-              Describe what changes you want. AI will modify the current template.
+              描述你想要的变化，AI 将修改当前模板。
             </p>
 
             {aiLoadingSuggestions && (
-              <p style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 8 }}>Loading suggestions...</p>
+              <p style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 8 }}>加载建议中...</p>
             )}
             {aiSuggestions.length > 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
@@ -155,7 +155,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
                   }
                 }}
                 disabled={aiModifying}
-                placeholder={aiSuggestions.length > 0 ? "Type or click a suggestion above" : "Describe your modification..."}
+                placeholder={aiSuggestions.length > 0 ? "点击建议或输入修改内容" : "描述你的修改..."}
                 style={{
                   flex: 1, padding: "10px 14px", background: "var(--bg-input)",
                   border: "1px solid var(--border)", borderRadius: "var(--radius)",
@@ -163,15 +163,15 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
                 }}
               />
               <button className="primary" onClick={handleAiAssist} disabled={aiModifying}>
-                {aiModifying ? "Modifying..." : "Modify"}
+                {aiModifying ? "修改中..." : "修改"}
               </button>
               <button className="secondary" onClick={() => { setShowAiAssist(false); setAiInstruction(""); setAiSuggestions([]); }}
-                disabled={aiModifying}>Cancel</button>
+                disabled={aiModifying}>取消</button>
             </div>
 
             {aiHistory.length > 0 && (
               <div style={{ marginTop: 12, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
-                <p style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 6 }}>Recent changes:</p>
+                <p style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 6 }}>最近修改:</p>
                 {[...aiHistory].reverse().map((h, i) => (
                   <div key={i} style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 4 }}>{h}</div>
                 ))}
