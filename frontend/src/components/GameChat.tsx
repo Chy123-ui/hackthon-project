@@ -26,7 +26,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [gameState, setGameState] = useState<Record<string, unknown>>({});
   const [error, setError] = useState("");
   const [tokens, setTokens] = useState<{ used: number; budget: number; percent: number } | null>(null);
-  const { displayText: typewriterText } = useTypewriter({
+  const { displayText: typewriterText, isComplete: typewriterComplete } = useTypewriter({
     text: displayStream,
     isActive: loading,
   });
@@ -43,7 +43,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   }, [session?.messages, streamingText, typewriterText]);
 
   useEffect(() => {
-    const shouldFinalize = streamComplete;
+    const shouldFinalize = streamComplete && (typewriterComplete || displayStream.length === 0);
     if (!shouldFinalize || finalizingRef.current) return;
 
     finalizingRef.current = true;
@@ -54,7 +54,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
       setLoading(false);
       finalizingRef.current = false;
     });
-  }, [displayStream.length, streamComplete]);
+  }, [displayStream.length, streamComplete, typewriterComplete]);
 
   async function loadSession(withMeta = false) {
     try {
@@ -97,7 +97,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
       (chunk) => {
         setStreamingText((prev) => prev + chunk);
         const d = streamRef.current.feed(chunk);
-        if (d) setDisplayStream((prev) => prev + d);
+        if (d) setDisplayStream(d);
       },
       (newSuggestions, newState) => {
         setSuggestions(newSuggestions);
@@ -152,19 +152,19 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
               playerName={playerName}
             />
           ))}
-          {loading && displayStream && (
+          {loading && typewriterText && (
             <div className="message assistant">
               <div className="role-label">GM</div>
               <div className="assistant-content">
                 <ThoughtPlaceholder />
                 <div className="narrate-block streaming">
-                  {displayStream}
+                  {typewriterText}
                   <span className="typing-cursor" />
                 </div>
               </div>
             </div>
           )}
-          {loading && !displayStream && (
+          {loading && !typewriterText && (
             <div className="message assistant">
               <div className="role-label">GM</div>
               Generating...
