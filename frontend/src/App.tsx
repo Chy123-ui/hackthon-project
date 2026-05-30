@@ -8,6 +8,15 @@ type Tab = "game" | "templates" | "settings";
 
 function App() {
   const [tab, setTab] = useState<Tab>("game");
+  const [gameKey, setGameKey] = useState(0);
+
+  function handleTabClick(id: Tab) {
+    if (id === "game" && tab === "game") {
+      setGameKey((k) => k + 1);
+    } else {
+      setTab(id);
+    }
+  }
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "game", label: "Game" },
@@ -22,7 +31,7 @@ function App() {
           <button
             key={t.id}
             className={`tab-btn ${tab === t.id ? "active" : ""}`}
-            onClick={() => setTab(t.id)}
+            onClick={() => handleTabClick(t.id)}
           >
             {t.label}
           </button>
@@ -30,7 +39,7 @@ function App() {
       </div>
 
       <div className="tab-content">
-        {tab === "game" && <GameView />}
+        {tab === "game" && <GameView key={gameKey} />}
         {tab === "templates" && <TemplateEditor />}
         {tab === "settings" && <SettingsPanel />}
       </div>
