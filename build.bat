@@ -12,23 +12,23 @@ echo  re:life - Build
 echo ============================================
 echo.
 
-echo [1/4] Building frontend...
+echo [1/5] Building frontend...
 cd /d "%FRONTEND_DIR%"
 cmd /c "npm run build"
 if errorlevel 1 ( echo Frontend build failed & exit /b 1 )
 
 echo.
-echo [2/4] Clearing build dir...
+echo [2/5] Clearing build dir...
 rmdir /S /Q "%BUILD_DIR%" 2>nul
 mkdir "%OUT_DIR%"
 mkdir "%OUT_DIR%\data"
 
-echo [3/4] Preparing Python deps...
+echo [3/5] Preparing Python deps...
 cd /d "%BACKEND_DIR%"
 if not exist ".venv\Scripts\python.exe" ( python -m venv .venv )
 .venv\Scripts\pip install -q -r requirements.txt
 
-echo [4/4] Copying files...
+echo [4/5] Copying files...
 robocopy ".venv" "%OUT_DIR%\.venv" /E /NFL /NDL /NJH /NJS >nul
 robocopy "app" "%OUT_DIR%\app" /E /NFL /NDL /NJH /NJS >nul
 robocopy "protocol" "%OUT_DIR%\protocol" /E /NFL /NDL /NJH /NJS >nul
