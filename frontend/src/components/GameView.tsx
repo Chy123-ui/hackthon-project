@@ -9,6 +9,7 @@ import {
   getPlayerTemplate,
 } from "../services/api";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
+import CustomSelect from "./CustomSelect";
 import GameChat from "./GameChat";
 import SessionList, { filterSessions, sortByUpdatedDesc } from "./SessionList";
 
@@ -165,16 +166,11 @@ export default function GameView({ searchQuery = "" }: Props) {
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
         />
-        <select
+        <CustomSelect
           value={selectedWorld}
-          onChange={(e) => setSelectedWorld(e.target.value)}
-        >
-          {worlds.map((w) => (
-            <option key={w} value={w}>
-              {w}
-            </option>
-          ))}
-        </select>
+          onChange={setSelectedWorld}
+          options={worlds}
+        />
         <button onClick={handleNewGame} disabled={loading}>
           {loading ? "创建中..." : "新游戏"}
         </button>

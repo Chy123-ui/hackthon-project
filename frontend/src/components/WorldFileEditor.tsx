@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import CustomSelect from "./CustomSelect";
 
 type WorldFile = "world" | "player" | "preferences";
 
@@ -65,9 +66,12 @@ export default function WorldFileEditor({
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-        <select className="world-select" value={selectedWorld} onChange={(e) => onSelectWorld(e.target.value)}>
-          {worlds.map((w) => <option key={w} value={w}>{w}</option>)}
-        </select>
+        <CustomSelect
+          className="world-select"
+          value={selectedWorld}
+          onChange={onSelectWorld}
+          options={worlds}
+        />
         {fileLabels.map((f) => (
           <button key={f} className={`tab-btn ${activeFile === f ? "active" : ""}`} onClick={() => onSelectFile(f)} style={{ padding: "8px 16px", fontSize: 13 }}>{f}</button>
         ))}
