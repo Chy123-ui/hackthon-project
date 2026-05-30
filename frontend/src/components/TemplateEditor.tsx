@@ -249,8 +249,8 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
     <>
       <TemplateList
         worlds={visibleWorlds} selectedWorld={selectedWorld}
-        onSelect={openEditor} onNewWorld={() => setShowNewWorld(true)}
-        onImport={() => fileInputRef.current?.click()} onExport={handleExport}
+        onSelect={openEditor} onNewWorld={() => { setShowNewWorld(true); setShowAiAssist(false); }}
+        onImport={() => { fileInputRef.current?.click(); setShowNewWorld(false); }} onExport={handleExport}
         onDelete={async (w) => { try { await deleteWorld(w); setStatus("deleted"); setTimeout(() => setStatus(""), 2000); await loadAll(); } catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); } }}
         multiSelect={multiMode}
         selected={selected}

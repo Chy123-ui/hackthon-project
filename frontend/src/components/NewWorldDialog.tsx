@@ -83,10 +83,11 @@ export default function NewWorldDialog({ onCreated, onError }: Props) {
       }}
     >
       <h3 style={{ color: "var(--accent)", fontSize: 14, marginBottom: 8 }}>
-        AI Generate New World
+        AI Generate a New World
       </h3>
       <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
-        Describe the world concept. AI will generate world, player, and preferences templates.
+        Describe a world concept and AI will create templates for it.<br />
+        To import an existing file (.txt, .docx, .json), use the Import button instead.
       </p>
       <div style={{ display: "flex", gap: 8 }}>
         <input
