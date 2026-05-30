@@ -1,0 +1,12 @@
+# User Template (可编辑) -- 玩家自定义内容
+# 玩家可以通过前端界面编辑此文件
+
+player:
+  name: 冒险者
+  description: 一位来自乡下的年轻冒险者，怀揣着对未知世界的向往
+  background: 在宁静的村庄长大，从小听游吟诗人讲述英雄传说，练就了一手不错的剑术
+
+preferences:
+  tone: 史诗冒险与轻松幽默交织
+  pacing: 适中，给玩家足够的思考和选择空间
+  detail_level: 丰富的环境描写和 NPC 互动
