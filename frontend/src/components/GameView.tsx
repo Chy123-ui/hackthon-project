@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GameListItem } from "../services/api";
 import {
   listGames,
@@ -6,6 +6,7 @@ import {
   startGame,
   deleteGame,
   listWorlds,
+  getPlayerTemplate,
 } from "../services/api";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 import GameChat from "./GameChat";
@@ -20,10 +21,23 @@ export default function GameView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const firstLoadRef = useRef(true);
 
   useEffect(() => {
     loadAll();
   }, []);
+
+  useEffect(() => {
+    if (firstLoadRef.current) { firstLoadRef.current = false; return; }
+    getPlayerTemplate(selectedWorld)
+      .then((data) => {
+        const name = data && typeof data === "object" && "name" in data
+          ? String((data as Record<string, unknown>).name)
+          : "";
+        if (name) setPlayerName(name);
+      })
+      .catch(() => {});
+  }, [selectedWorld]);
 
   async function loadAll() {
     try {
