@@ -982,10 +982,5 @@ button.danger:hover {
 }
 
 .suggestion-card.leaving {
-  animation: fade-out 0.2s ease-in forwards;
-  opacity: 1;
-}
-
-input[type="checkbox"] {
-  accent-color: #9b7ed4;
+  animation: fade-out 0.25s ease-in forwards;
 }
