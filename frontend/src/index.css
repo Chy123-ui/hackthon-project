@@ -120,6 +120,8 @@ body {
     0 1px 0 color-mix(in srgb, white 24%, transparent),
     0 0 18px var(--accent-glow);
   white-space: nowrap;
+  cursor: default;
+  user-select: none;
 }
 
 .tab-btn {
@@ -199,6 +201,24 @@ body {
   color: var(--accent);
   margin-bottom: 24px;
   font-size: 24px;
+}
+
+.game-sessions h2.home-logo {
+  font-family: "Edwardian Script ITC", "Palace Script MT", "Brush Script MT", "Segoe Script", cursive;
+  font-size: 58px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  text-shadow:
+    0 1px 0 color-mix(in srgb, white 24%, transparent),
+    0 0 22px var(--accent-glow);
+  cursor: default;
+  user-select: none;
+}
+
+.game-sessions > h3 {
+  cursor: default;
+  user-select: none;
 }
 
 .session-list {

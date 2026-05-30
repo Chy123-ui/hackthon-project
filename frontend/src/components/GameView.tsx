@@ -118,7 +118,7 @@ export default function GameView({ searchQuery = "" }: Props) {
 
   return (
     <div className="game-sessions">
-      <h2>Your Adventure</h2>
+      <h2 className="home-logo">re:life</h2>
 
       {error && <div className="error-banner">{error}</div>}
 
