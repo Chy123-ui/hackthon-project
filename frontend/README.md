@@ -1,4 +1,4 @@
-# AI WenYou Frontend
+# re:life Frontend
 
 React + Vite + TypeScript 前端。
 

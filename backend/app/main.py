@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .api.routes import router
 
-app = FastAPI(title="AI 文游", version="0.1.0")
+app = FastAPI(title="re:life", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

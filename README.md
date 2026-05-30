@@ -1,4 +1,4 @@
-# AI 文游 (AI WenYou)
+# re:life
 
 AI 驱动的文字冒险游戏引擎。玩家自由输入动作，AI 作为 GM 推进剧情。
 
