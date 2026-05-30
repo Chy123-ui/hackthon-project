@@ -118,25 +118,39 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
       <div className="template-view">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <h2>Editing: {selectedWorld}</h2>
-          <div style={{ display: "flex", gap: 8 }}>
-            {showAiAssist ? (
-              <div style={{ display: "flex", gap: 6 }}>
-                <input
-                  value={aiInstruction}
-                  onChange={(e) => setAiInstruction(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAiAssist()}
-                  placeholder="e.g. add a dark wizard faction"
-                  style={{ padding: "6px 10px", background: "var(--bg-input)", border: "1px solid var(--accent)", borderRadius: 4, color: "var(--text)", fontSize: 13, width: 220 }}
-                />
-                <button className="primary" onClick={handleAiAssist} style={{ fontSize: 12, padding: "6px 10px" }}>Go</button>
-                <button className="secondary" onClick={() => { setShowAiAssist(false); setAiInstruction(""); }} style={{ fontSize: 12, padding: "6px 10px" }}>Cancel</button>
-              </div>
-            ) : null}
-            <button className="secondary" onClick={() => { setEditing(false); loadAll(); }}>
-              Back to Templates
-            </button>
-          </div>
+          <button className="secondary" onClick={() => { setEditing(false); loadAll(); }}>
+            Back to Templates
+          </button>
         </div>
+
+        {showAiAssist && (
+          <div style={{
+            marginBottom: 16, padding: 16, background: "var(--bg-card)",
+            border: "1px solid var(--accent)", borderRadius: "var(--radius)",
+          }}>
+            <h3 style={{ color: "var(--accent)", fontSize: 14, marginBottom: 8 }}>
+              AI Modify "{selectedWorld}"
+            </h3>
+            <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
+              Describe what changes you want. AI will modify the current template.
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                value={aiInstruction}
+                onChange={(e) => setAiInstruction(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAiAssist()}
+                placeholder='e.g. "add a dark wizard faction" or "make the world darker"'
+                style={{
+                  flex: 1, padding: "10px 14px", background: "var(--bg-input)",
+                  border: "1px solid var(--border)", borderRadius: "var(--radius)",
+                  color: "var(--text)", fontSize: 14,
+                }}
+              />
+              <button className="primary" onClick={handleAiAssist}>Modify</button>
+              <button className="secondary" onClick={() => { setShowAiAssist(false); setAiInstruction(""); }}>Cancel</button>
+            </div>
+          </div>
+        )}
 
         <WorldFileEditor
           worlds={worlds} selectedWorld={selectedWorld}

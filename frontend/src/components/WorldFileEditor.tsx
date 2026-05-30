@@ -46,7 +46,7 @@ export default function WorldFileEditor({
         ))}
 
         <button className="secondary" onClick={onAiAssist} style={{ fontSize: 13 }}>
-          AI Assist
+          AI Modify
         </button>
 
         <button className="primary" onClick={onSave} disabled={saving}>
