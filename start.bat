@@ -36,7 +36,7 @@ echo Frontend: http://localhost:5173
 echo.
 
 echo Starting Backend (FastAPI)...
-start "AIWenYou-Backend" powershell -NoExit -Command "chcp 65001 > $null; $env:PYTHONIOENCODING='utf-8'; [Console]::OutputEncoding = [Text.Encoding]::UTF8; cd %~dp0backend; .venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+start "AIWenYou-Backend" powershell -NoExit -Command "chcp 65001 > $null; $env:PYTHONIOENCODING='utf-8'; [Console]::OutputEncoding = [Text.Encoding]::UTF8; cd %~dp0backend; .venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --no-color"
 
 timeout /t 2 /nobreak >nul
 
