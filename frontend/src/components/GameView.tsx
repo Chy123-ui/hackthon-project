@@ -21,6 +21,7 @@ export default function GameView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const defaultNameRef = useRef("冒险者");
   const firstLoadRef = useRef(true);
 
   useEffect(() => {
@@ -34,7 +35,10 @@ export default function GameView() {
         const name = data && typeof data === "object" && "name" in data
           ? String((data as Record<string, unknown>).name)
           : "";
-        if (name) setPlayerName(name);
+        if (name) {
+          setPlayerName(name);
+          defaultNameRef.current = name;
+        }
       })
       .catch(() => {});
   }, [selectedWorld]);
@@ -57,7 +61,10 @@ export default function GameView() {
     try {
       setLoading(true);
       setError("");
-      const { game_id } = await newGame(selectedWorld, playerName);
+      const { game_id } = await newGame(
+        selectedWorld,
+        playerName.trim() || defaultNameRef.current
+      );
       await startGame(game_id);
       setActiveSession(game_id);
       await loadAll();
