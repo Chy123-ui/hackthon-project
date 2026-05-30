@@ -30,7 +30,23 @@ robocopy "%FRONTEND_DIR%\dist" "%OUT_DIR%\dist" /E /NFL /NDL /NJH /NJS >nul
 copy "%BACKEND_DIR%\requirements.txt" "%OUT_DIR%\requirements.txt" >nul
 copy "%BACKEND_DIR%\run.py" "%OUT_DIR%\run.py" >nul
 
-echo [4/5] Creating start script...
+echo [4/5] Creating README + start script...
+echo # re:life> "%OUT_DIR%\README.md"
+echo. >> "%OUT_DIR%\README.md"
+echo ## System Requirements >> "%OUT_DIR%\README.md"
+echo - Python 3.10 or later >> "%OUT_DIR%\README.md"
+echo - Windows 10+, macOS or Linux >> "%OUT_DIR%\README.md"
+echo. >> "%OUT_DIR%\README.md"
+echo ## Quick Start >> "%OUT_DIR%\README.md"
+echo 1. Double-click start.bat >> "%OUT_DIR%\README.md"
+echo 2. First launch will auto-install dependencies (one-time, ~1 minute) >> "%OUT_DIR%\README.md"
+echo 3. Browser opens at http://localhost:8000 >> "%OUT_DIR%\README.md"
+echo 4. Go to Settings, fill in API Key / Base URL / Model >> "%OUT_DIR%\README.md"
+echo 5. Start playing in Game tab >> "%OUT_DIR%\README.md"
+echo. >> "%OUT_DIR%\README.md"
+echo ## Data >> "%OUT_DIR%\README.md"
+echo All save data is stored in data/ folder. Delete it to reset. >> "%OUT_DIR%\README.md"
+
 echo @echo off> "%OUT_DIR%\start.bat"
 echo chcp 65001 ^>nul >> "%OUT_DIR%\start.bat"
 echo cd /d "%%~dp0" >> "%OUT_DIR%\start.bat"

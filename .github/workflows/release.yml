@@ -43,24 +43,37 @@ jobs:
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - run: |
-          python -m venv release\re-life\.venv
-          release\re-life\.venv\Scripts\pip install -r backend\requirements.txt
       - run: |
           mkdir release\re-life\data
           xcopy backend\app release\re-life\app /E /I
           xcopy backend\protocol release\re-life\protocol /E /I
           xcopy backend\default_worlds release\re-life\default_worlds /E /I
           xcopy frontend\dist release\re-life\dist /E /I
+          copy backend\requirements.txt release\re-life\requirements.txt
           copy backend\run.py release\re-life\run.py
       - run: |
-          echo @echo off > release\re-life\start.bat
-          echo cd /d "%%~dp0" >> release\re-life\start.bat
-          echo start "" http://localhost:8000 >> release\re-life\start.bat
-          echo .venv\Scripts\python run.py >> release\re-life\start.bat
+          echo @echo off> release\re-life\start.bat
+          echo chcp 65001 ^>nul>> release\re-life\start.bat
+          echo cd /d "%%~dp0">> release\re-life\start.bat
+          echo if not exist ".venv\Scripts\python.exe" (>> release\re-life\start.bat
+          echo   echo Setting up environment...>> release\re-life\start.bat
+          echo   python -m venv .venv>> release\re-life\start.bat
+          echo   .venv\Scripts\pip install -r requirements.txt>> release\re-life\start.bat
+          echo )>> release\re-life\start.bat
+          echo start "" http://localhost:8000>> release\re-life\start.bat
+          echo .venv\Scripts\python run.py>> release\re-life\start.bat
+      - run: |
+          echo # re:life> release\re-life\README.md
+          echo.>> release\re-life\README.md
+          echo ## System Requirements>> release\re-life\README.md
+          echo - Python 3.10 or later>> release\re-life\README.md
+          echo - Windows 10+, macOS or Linux>> release\re-life\README.md
+          echo.>> release\re-life\README.md
+          echo ## Quick Start>> release\re-life\README.md
+          echo 1. Double-click start.bat>> release\re-life\README.md
+          echo 2. First launch auto-installs dependencies (~1 min)>> release\re-life\README.md
+          echo 3. Browser opens at http://localhost:8000>> release\re-life\README.md
+          echo 4. Settings then Game tab>> release\re-life\README.md
       - run: Compress-Archive -Path release\re-life -DestinationPath release\re-life.zip
       - uses: softprops/action-gh-release@v2
         with:
