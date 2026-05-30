@@ -133,7 +133,7 @@ export default function GameView() {
           </h3>
           <SessionList
             sessions={sessions.slice(0, 3)}
-            onOpen={(session) => setActiveSession(session.id)}
+            onOpen={(session) => { setActiveSession(session.id); setActivePlayerName(session.player_name); }}
             onDelete={handleDelete}
           />
         </>
