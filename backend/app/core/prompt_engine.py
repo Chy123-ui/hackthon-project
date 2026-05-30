@@ -15,9 +15,12 @@ def _build_extra(w: dict, p: dict, pref: dict) -> str:
         extras = {k: v for k, v in data.items() if k not in known}
         if extras:
             for k, v in extras.items():
-                lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
+                if isinstance(v, dict) and "label" in v:
+                    lines.append(f"  {v['label']}: {v.get('value', v)} (key={k})")
+                else:
+                    lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
     if lines:
-        lines.append("  以上字段在 state 中使用时，key 用英文，label 用中文展示。")
+        lines.append("  以上字段在 <state> 中使用中文 key，如: <set key=\"体质\">5</set>")
     return "\n".join(lines) if lines else "无"
 
 
@@ -38,12 +41,16 @@ class PromptEngine:
             yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 
     def _seed_defaults(self) -> None:
-        """Copy fantasy default template if data/worlds is empty"""
-        if self.list_worlds():
+        """Copy fantasy default template only on first run"""
+        marker = self.worlds_dir / ".seeded"
+        if marker.exists():
             return
-        default = Path(__file__).parent.parent.parent / "default_worlds" / "fantasy"
-        if default.exists():
-            shutil.copytree(default, self.worlds_dir / "fantasy")
+        fantasy = self.worlds_dir / "fantasy"
+        if not fantasy.exists():
+            default = Path(__file__).parent.parent.parent / "default_worlds" / "fantasy"
+            if default.exists():
+                shutil.copytree(default, fantasy)
+        marker.touch()
 
     def load_protocol(self) -> str:
         path = self.protocol_dir / "protocol.yaml"
