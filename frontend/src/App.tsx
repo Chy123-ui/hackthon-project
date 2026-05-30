@@ -97,7 +97,11 @@ function App() {
             color: "#fff", fontSize: 14, textAlign: "center",
             cursor: "pointer", zIndex: 999,
           }}>
-          API 未配置 — 点击前往设置页面填写 API Key、Base URL 和 Model
+          前往设置填写 API 配置
+          <span onClick={(e) => { e.stopPropagation(); setShowConfigAlert(false); }}
+            style={{ marginLeft: 16, cursor: "pointer", opacity: 0.7, fontSize: 15 }}>
+            ✕
+          </span>
         </div>
       )}
     </div>
