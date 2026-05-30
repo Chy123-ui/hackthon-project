@@ -131,9 +131,12 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
           {typewriterText && (
             <div className="message assistant">
               <div className="role-label">GM</div>
-              <div className="narrate-block streaming">
-                {typewriterText}
-                <span className="typing-cursor" />
+              <div className="assistant-content">
+                <ThoughtPlaceholder />
+                <div className="narrate-block streaming">
+                  {typewriterText}
+                  <span className="typing-cursor" />
+                </div>
               </div>
             </div>
           )}
@@ -168,6 +171,16 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
 }
 
 /* ---- sub-components (inline, trivial) ---- */
+
+function ThoughtPlaceholder() {
+  return (
+    <div className="thought-block placeholder">
+      <button className="thought-toggle" type="button" disabled>
+        Show thinking
+      </button>
+    </div>
+  );
+}
 
 function ChatHeader({
   world,
@@ -223,7 +236,7 @@ function ChatInput({
   disabled: boolean;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
 }) {
-  function handleKeyDown(e: React.KeyboardEvent) {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       const text = e.currentTarget.value.trim();

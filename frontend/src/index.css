@@ -476,29 +476,40 @@ button.danger:hover {
 }
 
 .thought-toggle {
+  appearance: none;
   display: block;
   width: 100%;
   background: transparent;
   border: 0;
   font-family: var(--font-sans);
-  text-align: left;
   font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0;
+  text-align: left;
   color: var(--text-secondary);
   cursor: pointer;
   padding: 4px 10px;
   user-select: none;
-  opacity: 0.6;
-  transition: opacity 0.2s;
+  opacity: 1;
+  transition: color 0.2s, opacity 0.2s;
 }
 
 .thought-toggle:hover {
-  opacity: 1;
   color: var(--accent);
 }
 
-.thought-block.visible .thought-toggle {
+.thought-toggle:disabled {
   opacity: 1;
-  color: var(--accent);
+  cursor: default;
+}
+
+.thought-toggle:disabled:hover {
+  color: var(--text-secondary);
+}
+
+.thought-block.visible .thought-toggle {
+  color: var(--text-secondary);
 }
 
 .thought-text {
