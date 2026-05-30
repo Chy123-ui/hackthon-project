@@ -92,7 +92,9 @@ export default function TemplateList({
                   style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--accent)" }}
                 />
               )}
-              <div onClick={() => onSelect(w)} style={{ flex: 1, cursor: "pointer" }}>
+              <div
+                onClick={() => { multiSelect && onSelectToggle ? onSelectToggle(w) : onSelect(w); }}
+                style={{ flex: 1, cursor: "pointer" }}>
                 <h3 style={{ fontSize: 16, color: "var(--text)", marginBottom: 4 }}>
                   {w}
                 </h3>
