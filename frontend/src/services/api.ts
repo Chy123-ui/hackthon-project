@@ -27,6 +27,7 @@ export interface GameSession {
   player_name: string;
   messages: { role: string; content: string }[];
   game_state: Record<string, unknown>;
+  suggestions?: string[];
   turn: number;
 }
 

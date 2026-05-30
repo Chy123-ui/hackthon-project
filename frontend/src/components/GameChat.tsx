@@ -42,6 +42,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
       const data = await getGameHistory(gameId);
       setSession(data);
       setGameState(data.game_state || {});
+      setSuggestions(data.suggestions || []);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     }

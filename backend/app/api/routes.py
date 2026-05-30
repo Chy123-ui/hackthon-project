@@ -328,6 +328,8 @@ async def start_game(game_id: str):
         session["game_state"] = prompt_engine.apply_state_updates(
             game_state, parsed["state_updates"]
         )
+    if parsed["suggestions"]:
+        session["suggestions"] = parsed["suggestions"]
 
     session_manager.save(game_id, session)
 
@@ -380,6 +382,8 @@ async def game_action(game_id: str, body: GameAction):
         session["game_state"] = prompt_engine.apply_state_updates(
             game_state, parsed["state_updates"]
         )
+    if parsed["suggestions"]:
+        session["suggestions"] = parsed["suggestions"]
 
     session_manager.save(game_id, session)
 
