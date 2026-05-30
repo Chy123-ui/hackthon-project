@@ -303,7 +303,9 @@ async def start_game(game_id: str):
     first_scene = prompt_engine.render_first_message(
         session["world"], session["player_name"]
     )
-    starter = f"{system_prompt}\n\n现在开始游戏。开场场景：{first_scene}"
+    starter = f"{system_prompt}\n\n现在开始游戏。玩家当前场景参考：{first_scene[:100]}..."
+    if "首先，请为这个场景开场" not in starter:
+        starter += "\n请以生动叙事开场，不要重复上述场景参考的原文。"
 
     messages = [
         {"role": "system", "content": starter},
