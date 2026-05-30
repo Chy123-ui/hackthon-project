@@ -7,17 +7,16 @@ export default function ConfirmDeleteDialog({ onCancel, onConfirm }: Props) {
   return (
     <div className="confirm-overlay" onClick={onCancel}>
       <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-        <h3>Delete Session?</h3>
+        <h3>确定删除？</h3>
         <p>
-          This action cannot be undone. The session and all its messages will be
-          permanently deleted.
+          此操作不可撤销。对话会话及所有消息将被永久删除。
         </p>
         <div className="confirm-actions">
           <button className="secondary" onClick={onCancel}>
-            Cancel
+            取消
           </button>
           <button className="danger" onClick={onConfirm}>
-            Delete
+            删除
           </button>
         </div>
       </div>
