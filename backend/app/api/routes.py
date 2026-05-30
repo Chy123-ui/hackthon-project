@@ -86,7 +86,7 @@ async def update_config(body: ConfigUpdate):
     if settings.api_key and settings.model:
         try:
             max_tok = await fetch_model_max_tokens()
-            settings.model_max_tokens = max_tok
+            settings.context_limit = max_tok
         except Exception:
             pass
     return {"status": "ok"}
@@ -375,7 +375,7 @@ async def game_action(game_id: str, body: GameAction):
     )
 
     messages = assemble_messages(
-        session, system_prompt, settings.model_max_tokens, body.action
+        session, system_prompt, settings.context_limit, body.action
     )
 
     try:
@@ -420,7 +420,7 @@ async def game_action_stream(game_id: str, body: GameAction):
     )
 
     messages = assemble_messages(
-        session, system_prompt, settings.model_max_tokens, body.action
+        session, system_prompt, settings.context_limit, body.action
     )
 
     async def stream_response():
@@ -486,10 +486,10 @@ async def game_tokens(game_id: str):
         session["world"], session["player_name"], session.get("game_state", {})
     )
 
-    msgs = assemble_messages(session, system_prompt, settings.model_max_tokens)
+    msgs = assemble_messages(session, system_prompt, settings.context_limit)
     used = count_messages(msgs)
     return {
         "used": used,
-        "budget": settings.model_max_tokens,
-        "percent": round(used / max(settings.model_max_tokens, 1) * 100, 1),
+        "budget": settings.context_limit,
+        "percent": round(used / max(settings.context_limit, 1) * 100, 1),
     }

@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     model: str = "gpt-4o"
     max_tokens: int = 4096
     temperature: float = 0.8
-    model_max_tokens: int = 131072
+    context_limit: int = 131072
     data_dir: Path = Path(__file__).parent.parent.parent / "data"
     templates_dir: Path = Path(__file__).parent.parent.parent / "templates"
 
