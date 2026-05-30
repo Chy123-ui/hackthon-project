@@ -7,7 +7,6 @@ interface Props {
 export default function StatePanel({ gameState }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set());
-  const [longKeys, setLongKeys] = useState<Set<string>>(new Set());
   const valueRefs = useRef(new Map<string, HTMLSpanElement>());
   const stateCount = Object.keys(gameState).length;
 
@@ -15,8 +14,6 @@ export default function StatePanel({ gameState }: Props) {
     const nextLongKeys = new Set<string>();
 
     for (const key of Object.keys(gameState)) {
-      if (isPinnedKey(key)) continue;
-
       const el = valueRefs.current.get(key);
       if (!el) continue;
 
@@ -27,13 +24,10 @@ export default function StatePanel({ gameState }: Props) {
       }
     }
 
-    setLongKeys(nextLongKeys);
     setCollapsedKeys(new Set(nextLongKeys));
   }, [gameState]);
 
   function toggleItem(key: string) {
-    if (!longKeys.has(key) || isPinnedKey(key)) return;
-
     setCollapsedKeys((prev) => {
       const next = new Set(prev);
       if (next.has(key)) {
@@ -82,7 +76,6 @@ export default function StatePanel({ gameState }: Props) {
           } else {
             displayValue = String(value).replace(/<[^>]*>/g, "").trim();
           }
-          const canCollapse = longKeys.has(key) && !isPinnedKey(key);
           const isCollapsed = collapsedKeys.has(key);
 
           return (
@@ -94,13 +87,10 @@ export default function StatePanel({ gameState }: Props) {
                 className="state-panel-key"
                 type="button"
                 onClick={() => toggleItem(key)}
-                disabled={!canCollapse}
               >
-                {canCollapse && (
-                  <span className={`item-arrow${isCollapsed ? "" : " expanded"}`}>
-                    &gt;
-                  </span>
-                )}
+                <span className={`item-arrow${isCollapsed ? "" : " expanded"}`}>
+                  &gt;
+                </span>
                 {displayKey}
               </button>
               <span
@@ -118,9 +108,4 @@ export default function StatePanel({ gameState }: Props) {
       </div>
     </div>
   );
-}
-
-function isPinnedKey(key: string) {
-  const normalized = key.trim().toLowerCase();
-  return normalized === "location" || normalized === "hp";
 }

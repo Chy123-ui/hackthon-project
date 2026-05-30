@@ -866,16 +866,8 @@ button.danger:hover {
   user-select: none;
 }
 
-.state-panel-key:disabled {
-  cursor: default;
-}
-
 .state-panel-key:hover {
   color: var(--accent);
-}
-
-.state-panel-key:disabled:hover {
-  color: var(--text-secondary);
 }
 
 .item-arrow {
