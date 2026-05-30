@@ -49,7 +49,7 @@ export default function SessionList({ sessions, onOpen, onDelete, multiSelect, s
                 {s.player_name} - {s.world}
               </h3>
               <p>
-                Turn {s.turn} | Updated: {new Date(s.updated_at).toLocaleString()}
+                第 {s.turn} 回合 | {new Date(s.updated_at).toLocaleString()}
               </p>
             </div>
             {!multiSelect && (
