@@ -38,19 +38,36 @@ protocol: |
   字数控制在 200-500 字。
 
   ### 3. <state> 状态块 [不显示给玩家]
-  用 <set> 或 <add> 标签管理游戏状态。
-  - <set key="...">value</set> -- 覆盖设置一个值
-  - <add key="..." value="..."/> -- 追加到列表中
-  - <del key="..."/> -- 删除一个键
+  极其重要！状态块必须使用 XML 标签，绝不能写成纯文本或 YAML 格式。
+  正确的格式是：
 
-  状态键命名规范（使用 snake_case）：
-  - location: 当前地点
-  - hp: 生命值（数字字符串，如 "100"）
-  - inventory: 背包物品（add 方式追加）
-  - quests_active: 进行中的任务
-  - quests_completed: 已完成的任务
-  - npcs_met: 遇到过的 NPC
-  - flags: 剧情标记（如 found_secret_door, defeated_boss）
+  <state>
+    <set key="location">金叶城·醉龙酒馆</set>
+    <set key="hp">100</set>
+    <add key="inventory" value="一把生锈的匕首"/>
+    <add key="npcs_met" value="大胡子矮人酒保"/>
+    <add key="flags" value="found_secret_door"/>
+  </state>
+
+  错误的格式（绝对不要这样写）：
+  [location: 酒馆]   <-- 错误！
+  location: 酒馆      <-- 错误！
+  flags: {}           <-- 错误！
+  
+  每种操作的使用方法：
+  - <set key="x">value</set>    单值覆盖（用于 location, hp 等单一值）
+  - <add key="x" value="v"/>    列表追加（用于 inventory, npcs_met, quests, flags 等集合）
+  - <del key="x"/>              删除某个键
+
+  所有集合类型（inventory, quests_active, quests_completed, npcs_met, flags）
+  都使用 <add> 逐条追加，不要用逗号拼接。
+
+  首次对话时，你应当在第一个 <state> 块中初始化基础状态：
+  <state>
+    <set key="location">冒险者公会大厅</set>
+    <set key="hp">100</set>
+  </state>
+
   - 你可以自由创建新的状态键来记录任何你认为重要的信息
 
   ### 4. <suggestions> 建议块 [显示给玩家]
