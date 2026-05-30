@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 title AI WenYou - Launcher
 
 echo ============================================
@@ -35,7 +36,7 @@ echo Frontend: http://localhost:5173
 echo.
 
 echo Starting Backend (FastAPI)...
-start "AIWenYou-Backend" cmd /c "cd /d %~dp0backend && .venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+start "AIWenYou-Backend" cmd /c "chcp 65001 >nul && cd /d %~dp0backend && set PYTHONIOENCODING=utf-8 && .venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 timeout /t 2 /nobreak >nul
 
