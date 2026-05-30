@@ -42,6 +42,7 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
     { key: "gen_max_tokens", label: "Gen Max Tokens", type: "number", placeholder: "16384" },
     { key: "temperature", label: "Temperature", type: "number", placeholder: "0.8" },
   ];
+  const sugs = { key: "suggestions_mode", label: "行动建议", options: { off: "关闭", on: "开启（可选）", required: "开启（必须）" } };
 
   const kw = searchQuery.trim().toLowerCase();
   const visibleFields = kw ? fields.filter((f) => f.label.toLowerCase().includes(kw) || f.key.toLowerCase().includes(kw)) : fields;
@@ -96,6 +97,19 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
           />
         </div>
       ))}
+
+      <div className="form-group">
+        <label>{sugs.label}</label>
+        <select
+          value={String(config.suggestions_mode || "on")}
+          onChange={(e) => setConfig({ ...config, suggestions_mode: e.target.value })}
+          className="world-select"
+        >
+          {Object.entries(sugs.options).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
+        </select>
+      </div>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button className="primary" onClick={handleSave} disabled={saving}>

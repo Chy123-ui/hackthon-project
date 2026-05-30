@@ -7,6 +7,15 @@ from pathlib import Path
 from .config import settings
 
 
+def _sug_rule() -> str:
+    mode = settings.suggestions_mode
+    if mode == "off":
+        return "不要生成建议块，跳过此部分。"
+    if mode == "required":
+        return "必须生成。列出 2-4 个建议行动，每个用 <action> 标签包裹。禁止省略。"
+    return "可选。列出 2-4 个建议行动，每个用 <action> 标签包裹。"
+
+
 def _build_extra(w: dict, p: dict, pref: dict) -> str:
     """Extract extra YAML fields"""
     known = {"name", "description", "starting_scene", "background", "narrative_style", "tone", "pacing", "detail_level"}
@@ -118,6 +127,7 @@ class PromptEngine:
             "pacing": pref.get("pacing", ""),
             "detail_level": pref.get("detail_level", ""),
             "extra_context": _build_extra(w, p, pref),
+            "suggestions_rule": _sug_rule(),
         }
 
     def render_system_prompt(
