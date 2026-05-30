@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { GameSession } from "../services/api";
 import { getGameHistory, sendActionStream } from "../services/api";
-import { stripTags } from "../hooks/useGameStream";
+import { StreamDisplay } from "../hooks/useGameStream";
 import ChatMessage from "./ChatMessage";
 import StatePanel from "./StatePanel";
 import { useTypewriter } from "../hooks/useTypewriter";
@@ -17,6 +17,8 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [streamingText, setStreamingText] = useState("");
+  const streamRef = useRef(new StreamDisplay());
+  const [displayStream, setDisplayStream] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [gameState, setGameState] = useState<Record<string, unknown>>({});
   const [error, setError] = useState("");
@@ -51,6 +53,8 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     setInput("");
     setLoading(true);
     setStreamingText("");
+    setDisplayStream("");
+    streamRef.current = new StreamDisplay();
     setSuggestions([]);
     setError("");
 
@@ -63,7 +67,11 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     await sendActionStream(
       gameId,
       action,
-      (chunk) => setStreamingText((prev) => prev + chunk),
+      (chunk) => {
+        setStreamingText((prev) => prev + chunk);
+        const d = streamRef.current.feed(chunk);
+        if (d) setDisplayStream((prev) => prev + d);
+      },
       (newSuggestions, newState) => {
         setSuggestions(newSuggestions);
         setGameState(newState);
@@ -108,7 +116,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
             <div className="message assistant">
               <div className="role-label">GM</div>
               <div className="narrate-block streaming">
-                {stripTags(streamingText)}
+                {displayStream}
                 <span className="typing-cursor" />
               </div>
               {typewriterText}
