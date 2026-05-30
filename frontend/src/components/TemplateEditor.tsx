@@ -238,6 +238,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
         multiSelect={multiMode}
         selected={selected}
         onSelectToggle={toggleSelect}
+        onSelectAll={() => setSelected(new Set(visibleWorlds))}
         onToggleMulti={() => { setMultiMode(!multiMode); setSelected(new Set()); }}
         multiMode={multiMode}
         selectedCount={selected.size}

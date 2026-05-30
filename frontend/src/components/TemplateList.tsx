@@ -8,6 +8,7 @@ interface Props {
   multiSelect?: boolean;
   selected?: Set<string>;
   onSelectToggle?: (world: string) => void;
+  onSelectAll?: () => void;
   onToggleMulti?: () => void;
   multiMode?: boolean;
   selectedCount?: number;
@@ -24,6 +25,7 @@ export default function TemplateList({
   multiSelect,
   selected,
   onSelectToggle,
+  onSelectAll,
   onToggleMulti,
   multiMode,
   selectedCount = 0,
@@ -39,6 +41,11 @@ export default function TemplateList({
         <button className="primary" onClick={onNewWorld}>
           + 新建世界
         </button>
+        {multiSelect && (
+          <button className="secondary" onClick={onSelectAll}>
+            全选
+          </button>
+        )}
         <button className="secondary" onClick={onToggleMulti}>
           {multiMode ? "取消" : "选择"}
         </button>

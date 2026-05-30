@@ -90,9 +90,16 @@ export default function HistoryView({ searchQuery = "" }: Props) {
     <div style={{ padding: 32, overflowY: "auto", maxWidth: 700, margin: "0 auto", width: "100%" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <h2 style={{ color: "var(--accent)", fontSize: 24, margin: 0 }}>历史记录</h2>
-        <button className="secondary" onClick={() => { setMultiMode(!multiMode); setSelected(new Set()); }}>
-          {multiMode ? "取消" : "选择"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {multiMode && (
+            <button className="secondary" onClick={() => setSelected(new Set(visibleSessions.map(s => s.id)))}>
+              全选
+            </button>
+          )}
+          <button className="secondary" onClick={() => { setMultiMode(!multiMode); setSelected(new Set()); }}>
+            {multiMode ? "取消" : "选择"}
+          </button>
+        </div>
       </div>
 
       {error && <div className="error-banner">{error}</div>}
