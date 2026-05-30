@@ -55,15 +55,15 @@ export default function StatePanel({ gameState }: Props) {
         className="state-panel-toggle"
         type="button"
         onClick={() => setCollapsed((v) => !v)}
-        aria-label={collapsed ? "Expand game state" : "Collapse game state"}
-        title={collapsed ? "Expand game state" : "Collapse game state"}
+        aria-label={collapsed ? "展开游戏状态" : "收起游戏状态"}
+        title={collapsed ? "展开游戏状态" : "收起游戏状态"}
       >
         {collapsed ? "<" : ">"}
       </button>
       {collapsed && <span className="state-panel-rail-count">{stateCount}</span>}
       <div className="state-panel-inner">
         <div className="state-panel-header">
-          <h4 className="state-panel-title">Game State</h4>
+          <h4 className="state-panel-title">游戏状态</h4>
           <span className="state-panel-count">{stateCount}</span>
         </div>
         {Object.entries(gameState).map(([key, value]) => {

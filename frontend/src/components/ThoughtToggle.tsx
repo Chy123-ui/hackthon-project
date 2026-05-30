@@ -14,7 +14,7 @@ export default function ThoughtToggle({ thought }: Props) {
         type="button"
         onClick={() => setExpanded(!expanded)}
       >
-        {expanded ? "Hide thinking" : "Show thinking"}
+        {expanded ? "隐藏思考" : "显示思考"}
       </button>
       {expanded && <div className="thought-text">{thought}</div>}
     </div>
