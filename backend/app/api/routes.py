@@ -1,5 +1,6 @@
 """API 路由 -- Agent 协议 + Tape 上下文管理"""
 import json
+import io
 import re
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -209,12 +210,52 @@ detail_level: 细节程度
 {content}"""
 
 
+def _extract_docx(raw: bytes) -> str:
+    import zipfile
+    import xml.etree.ElementTree as ET
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw)) as z:
+            if "word/document.xml" not in z.namelist():
+                return ""
+            xml = z.read("word/document.xml")
+            root = ET.fromstring(xml)
+            ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            paragraphs = []
+            for p in root.iter(f"{{{ns}}}p"):
+                texts = [t.text or "" for t in p.iter(f"{{{ns}}}t")]
+                if texts:
+                    paragraphs.append("".join(texts))
+            return "\n".join(paragraphs)
+    except Exception:
+        return ""
+
+
+def _extract_doc(raw: bytes) -> str:
+    text = raw.decode("utf-8", errors="ignore")
+    text = re.sub(r"[^\x20-\x7e\u4e00-\u9fff\u3000-\u303f\uff00-\uffef\n]", "", text)
+    lines = [l.strip() for l in text.split("\n") if len(l.strip()) > 5]
+    return "\n".join(lines)
+
+
 @router.post("/templates/import")
 async def import_world(body: dict):
     content = body.get("content", "").strip()
     filename = body.get("filename", "imported.txt").strip()
-    if not content:
-        raise HTTPException(status_code=400, detail="No content provided")
+    is_binary = body.get("binary", False)
+
+    if is_binary:
+        import base64
+        raw = base64.b64decode(content)
+        ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        if ext == "docx":
+            content = _extract_docx(raw)
+        elif ext == "doc":
+            content = _extract_doc(raw)
+        else:
+            content = raw.decode("utf-8", errors="ignore")
+
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="No parseable content")
 
     detected_name = re.search(r"^name:\s*(\S+)", content, re.MULTILINE)
 
