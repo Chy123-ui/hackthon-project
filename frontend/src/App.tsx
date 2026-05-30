@@ -41,6 +41,7 @@ function App() {
   return (
     <div className="app">
       <div className="tab-bar">
+        <div className="nav-brand">re:life</div>
         {tabs.map((t) => (
           <button
             key={t.id}

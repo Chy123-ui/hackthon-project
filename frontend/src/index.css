@@ -108,6 +108,20 @@ body {
   -webkit-backdrop-filter: blur(12px);
 }
 
+.nav-brand {
+  margin-right: 22px;
+  color: var(--accent);
+  font-family: "Edwardian Script ITC", "Palace Script MT", "Brush Script MT", "Segoe Script", cursive;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  text-shadow:
+    0 1px 0 color-mix(in srgb, white 24%, transparent),
+    0 0 18px var(--accent-glow);
+  white-space: nowrap;
+}
+
 .tab-btn {
   padding: 12px 20px;
   background: none;
