@@ -7,13 +7,11 @@ import {
   deleteGame,
   listWorlds,
 } from "../services/api";
+import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 import GameChat from "./GameChat";
+import SessionList, { sortByUpdatedDesc } from "./SessionList";
 
-interface Props {
-  onBack?: () => void;
-}
-
-export default function GameView(_props: Props) {
+export default function GameView() {
   const [sessions, setSessions] = useState<GameListItem[]>([]);
   const [worlds, setWorlds] = useState<string[]>([]);
   const [playerName, setPlayerName] = useState("冒险者");
@@ -33,7 +31,7 @@ export default function GameView(_props: Props) {
         listGames(),
         listWorlds(),
       ]);
-      setSessions(games);
+      setSessions(sortByUpdatedDesc(games));
       setWorlds(tmpl.worlds);
       if (tmpl.worlds.length > 0) setSelectedWorld(tmpl.worlds[0]);
     } catch (e: unknown) {
@@ -93,23 +91,10 @@ export default function GameView(_props: Props) {
       {error && <div className="error-banner">{error}</div>}
 
       {deleteTarget && (
-        <div className="confirm-overlay" onClick={() => setDeleteTarget(null)}>
-          <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <h3>Delete Session?</h3>
-            <p>
-              This action cannot be undone. The session and all its messages
-              will be permanently deleted.
-            </p>
-            <div className="confirm-actions">
-              <button className="secondary" onClick={() => setDeleteTarget(null)}>
-                Cancel
-              </button>
-              <button className="danger" onClick={confirmDelete}>
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDeleteDialog
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
+        />
       )}
 
       {sessions.length > 0 && (
@@ -123,39 +108,11 @@ export default function GameView(_props: Props) {
           >
             Continue Playing
           </h3>
-          <div className="session-list">
-            {sessions.map((s) => (
-              <div
-                key={s.id}
-                className="session-item"
-                onClick={() => setActiveSession(s.id)}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div>
-                    <h3>
-                      {s.player_name} - {s.world}
-                    </h3>
-                    <p>
-                      Turn {s.turn} | Updated:{" "}
-                      {new Date(s.updated_at).toLocaleString()}
-                    </p>
-                  </div>
-                  <button
-                    className="danger"
-                    onClick={(e) => handleDelete(s.id, e)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <SessionList
+            sessions={sessions.slice(0, 3)}
+            onOpen={(session) => setActiveSession(session.id)}
+            onDelete={handleDelete}
+          />
         </>
       )}
 

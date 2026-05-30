@@ -1,10 +1,11 @@
 import { useState } from "react";
 import GameView from "./components/GameView";
+import HistoryView from "./components/HistoryView";
 import TemplateEditor from "./components/TemplateEditor";
 import SettingsPanel from "./components/SettingsPanel";
 import "./App.css";
 
-type Tab = "game" | "templates" | "settings";
+type Tab = "game" | "history" | "templates" | "settings";
 
 function App() {
   const [tab, setTab] = useState<Tab>("game");
@@ -20,6 +21,7 @@ function App() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "game", label: "Game" },
+    { id: "history", label: "History" },
     { id: "templates", label: "Templates" },
     { id: "settings", label: "Settings" },
   ];
@@ -40,6 +42,7 @@ function App() {
 
       <div className="tab-content">
         {tab === "game" && <GameView key={gameKey} />}
+        {tab === "history" && <HistoryView />}
         {tab === "templates" && <TemplateEditor />}
         {tab === "settings" && <SettingsPanel />}
       </div>
