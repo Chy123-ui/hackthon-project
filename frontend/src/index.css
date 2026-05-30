@@ -821,8 +821,16 @@ button.danger:hover {
   user-select: none;
 }
 
+.state-panel-key:disabled {
+  cursor: default;
+}
+
 .state-panel-key:hover {
   color: var(--accent);
+}
+
+.state-panel-key:disabled:hover {
+  color: var(--text-secondary);
 }
 
 .item-arrow {
@@ -849,7 +857,7 @@ button.danger:hover {
   font-size: 13px;
   line-height: 1.35;
   word-break: break-word;
-  max-height: 200px;
+  max-height: 999px;
   opacity: 1;
   overflow: hidden;
   transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease;
