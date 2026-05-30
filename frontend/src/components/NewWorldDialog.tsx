@@ -12,7 +12,40 @@ const EXAMPLES = [
   "victorian London where ghosts are real and commonplace",
   "martial arts academy hidden in a bamboo forest",
   "medieval kingdom preparing for a dragon awakening",
-];
+  "arctic research base where the ice is melting and revealing something",
+  "desert nomad tribes who communicate with ancient sand spirits",
+  "giant tree city where humans live alongside intelligent birds",
+  "underground city after the surface became uninhabitable",
+  "haunted manor where every room holds a different timeline",
+  "pirate archipelago where the sea itself is cursed",
+  "monastery on a floating island that drifts between dimensions",
+  "robot civilization trying to understand extinct humans",
+  "crystal cave network with bioluminescent ecosystems",
+  "time-looping city where every day resets at midnight",
+  "mountain monastery training monks who can bend reality",
+  "swamp village protected by a mysterious fog entity",
+  "trading post at the crossroads of three warring empires",
+  "colony ship that has been traveling for generations",
+  "dream realm where nightmares take physical form",
+  "abandoned theme park where the attractions are alive",
+  "coral reef kingdom facing an encroaching darkness",
+  "clockwork city powered by captured lightning spirits",
+  "library dimension containing every book ever written",
+  "volcanic forge realm where weapons are forged from souls",
+] as const;
+
+export const MODIFY_EXAMPLES = [
+  "add a powerful secret society that controls trade",
+  "introduce a dangerous magical disease spreading rapidly",
+  "create a rebel faction fighting against the ruling power",
+  "add ancient ruins with unsolved puzzles and traps",
+  "introduce a mysterious stranger who knows the player's past",
+  "make the world's magic system more dangerous and unpredictable",
+  "add a legendary creature that roams the wilderness",
+  "create political tension between two major cities",
+  "introduce a prophecy that many believe is about the player",
+  "add a hidden underground black market network",
+] as const;
 
 interface Props {
   onCreated: (world: string) => void;

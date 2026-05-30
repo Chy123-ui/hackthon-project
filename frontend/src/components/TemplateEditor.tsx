@@ -5,7 +5,7 @@ import {
   updatePreferencesTemplate, previewTemplate,
   exportWorld, importWorld, deleteWorld, generateWorld,
 } from "../services/api";
-import NewWorldDialog from "./NewWorldDialog";
+import NewWorldDialog, { MODIFY_EXAMPLES } from "./NewWorldDialog";
 import WorldFileEditor from "./WorldFileEditor";
 import TemplateList from "./TemplateList";
 
@@ -28,6 +28,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
   const [showAiAssist, setShowAiAssist] = useState(false);
   const [aiInstruction, setAiInstruction] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modifyExample = useRef(MODIFY_EXAMPLES[Math.floor(Math.random() * MODIFY_EXAMPLES.length)]);
 
   useEffect(() => void loadAll(), []);
 
@@ -139,7 +140,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
                 value={aiInstruction}
                 onChange={(e) => setAiInstruction(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAiAssist()}
-                placeholder='e.g. "add a dark wizard faction" or "make the world darker"'
+                placeholder={`e.g. "${modifyExample.current}"`}
                 style={{
                   flex: 1, padding: "10px 14px", background: "var(--bg-input)",
                   border: "1px solid var(--border)", borderRadius: "var(--radius)",
