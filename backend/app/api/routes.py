@@ -188,6 +188,7 @@ IMPORT_PROMPT = """你是一个游戏世界观文件解析器。下面是用户�
 
  请输出三个 YAML 块（world.yaml / player.yaml / preferences.yaml）。
  name, description, starting_scene 等基础字段必须存在，但你可以自由添加额外字段。
+ 额外字段格式: key 英文存储 + label 中文标签。如: physique: { value: 5, label: 体质 }
 
 ```yaml
 # world.yaml
@@ -222,6 +223,7 @@ detail_level: 细节程度
 MODIFY_PROMPT = """你是一个游戏世界观编辑助手。下面是当前游戏世界的模板文件。
 用户有一项修改需求，请根据需求修改模板并在新的世界名中体现修改。
 返回修改后完整的三个 YAML 块。基础字段必须保留，你可以自由调整或添加额外字段。
+额外字段格式: key 英文存储 + label 中文标签。如: physique: { value: 5, label: 体质 }
 
 修改需求：{instruction}
 
@@ -456,7 +458,12 @@ WORLD_GEN_PROMPT = """你是一个游戏世界观设计师。根据用户提供�
 
 请输出三个 YAML 块（world.yaml / player.yaml / preferences.yaml）。
 name, description, starting_scene 等基础字段必须存在，但你可以自由添加额外字段
-（如 magic_system, factions, calendar 等），它们会被注入系统提示词。
+（如属性系统、好感度、日历等）。
+对于额外字段，key 用英文存储，同时加上 label 中文名用于前端展示。
+格式: key: { value: 初始值, label: 中文标签 }
+示例: physique: { value: 5, label: 体质 }
+      knowledge: { value: 8, label: 学识 }
+      affinity_yang: { value: 0, label: 杨妃好感 }
 
 ```yaml
 # world.yaml

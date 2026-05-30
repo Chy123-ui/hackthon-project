@@ -15,9 +15,12 @@ def _build_extra(w: dict, p: dict, pref: dict) -> str:
         extras = {k: v for k, v in data.items() if k not in known}
         if extras:
             for k, v in extras.items():
-                lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
+                if isinstance(v, dict) and "label" in v:
+                    lines.append(f"  {v['label']}: {v.get('value', v)} (key={k})")
+                else:
+                    lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
     if lines:
-        lines.append("  以上字段在 state 中使用时，key 用英文，label 用中文展示。")
+        lines.append("  以上字段在 <state> 中使用格式: <set key=\"english_key\" label=\"中文名\">值</set>")
     return "\n".join(lines) if lines else "无"
 
 
