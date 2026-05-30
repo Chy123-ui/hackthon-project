@@ -64,7 +64,7 @@ export default function SettingsPanel() {
         <label>Base URL</label>
         <input
           type="text"
-          placeholder="https://api.deepseek.com/v1"
+          placeholder="https://api.openai.com/v1"
           value={config.base_url ?? ""}
           onChange={(e) => setConfig({ ...config, base_url: e.target.value })}
         />
@@ -74,7 +74,7 @@ export default function SettingsPanel() {
         <label>Model</label>
         <input
           type="text"
-          placeholder="deepseek-chat"
+          placeholder="gpt-4o"
           value={config.model ?? ""}
           onChange={(e) => setConfig({ ...config, model: e.target.value })}
         />
