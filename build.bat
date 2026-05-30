@@ -36,10 +36,12 @@ robocopy "protocol" "%OUT_DIR%\protocol" /E /NFL /NDL /NJH /NJS >nul
 robocopy "default_worlds" "%OUT_DIR%\default_worlds" /E /NFL /NDL /NJH /NJS >nul
 robocopy "%FRONTEND_DIR%\dist" "%OUT_DIR%\dist" /E /NFL /NDL /NJH /NJS >nul
 
-echo @echo off > "%OUT_DIR%\start.bat"
-echo cd /d "%%~dp0" >> "%OUT_DIR%\start.bat"
-echo start "" http://localhost:8000 >> "%OUT_DIR%\start.bat"
-echo .venv\Scripts\python run.py >> "%OUT_DIR%\start.bat"
+(
+echo @echo off
+echo cd /d "%%~dp0"
+echo start "" http://localhost:8000
+echo .venv\Scripts\python run.py
+) > "%OUT_DIR%\start.bat"
 copy "%BACKEND_DIR%\run.py" "%OUT_DIR%\run.py" >nul
 
 echo [5/5] Creating README + ZIP...
