@@ -77,10 +77,10 @@ export default function StatePanel({ gameState }: Props) {
               if (v && typeof v === "object" && "label" in (v as Record<string, unknown>)) {
                 return (v as Record<string, unknown>).label;
               }
-              return String(v);
+              return String(v).replace(/<[^>]*>/g, "").trim();
             }).join(", ");
           } else {
-            displayValue = String(value);
+            displayValue = String(value).replace(/<[^>]*>/g, "").trim();
           }
           const canCollapse = longKeys.has(key) && !isPinnedKey(key);
           const isCollapsed = collapsedKeys.has(key);
