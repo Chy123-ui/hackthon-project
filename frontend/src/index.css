@@ -301,7 +301,6 @@ button:disabled {
   font-size: 11px;
   color: var(--text-secondary);
   margin-bottom: 4px;
-  text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
