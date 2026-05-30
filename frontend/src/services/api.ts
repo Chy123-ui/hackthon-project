@@ -47,7 +47,11 @@ export interface Config {
   temperature?: number;
 }
 
-// ---- Config ----
+export interface TokenInfo {
+  used: number;
+  budget: number;
+  percent: number;
+}
 
 export async function getConfig(): Promise<Config> {
   return request<Config>("/config");
@@ -57,8 +61,6 @@ export async function updateConfig(config: Config): Promise<void> {
   await request("/config", { method: "PUT", body: JSON.stringify(config) });
 }
 
-// ---- Templates: Core ----
-
 export async function getCoreProtocol(): Promise<{ protocol: string }> {
   return request("/templates/core/protocol");
 }
@@ -66,8 +68,6 @@ export async function getCoreProtocol(): Promise<{ protocol: string }> {
 export async function getCoreSafety(): Promise<{ rules: string }> {
   return request("/templates/core/safety");
 }
-
-// ---- Templates: World ----
 
 export async function listWorlds(): Promise<{ worlds: string[] }> {
   return request("/templates");
@@ -102,19 +102,11 @@ export async function previewTemplate(world: string): Promise<{ preview: string 
 }
 
 export async function generateWorld(concept: string): Promise<{ world: string; files: string[] }> {
-  return request("/templates/new", {
-    method: "POST",
-    body: JSON.stringify({ concept }),
-  });
+  return request("/templates/new", { method: "POST", body: JSON.stringify({ concept }) });
 }
 
-// ---- Game ----
-
 export async function newGame(world: string, player_name: string): Promise<{ game_id: string }> {
-  return request("/game/new", {
-    method: "POST",
-    body: JSON.stringify({ world, player_name }),
-  });
+  return request("/game/new", { method: "POST", body: JSON.stringify({ world, player_name }) });
 }
 
 export async function startGame(gameId: string): Promise<GameActionResponse> {
@@ -129,14 +121,8 @@ export async function getGameHistory(gameId: string): Promise<GameSession> {
   return request(`/game/${gameId}/history`);
 }
 
-export async function sendAction(
-  gameId: string,
-  action: string
-): Promise<GameActionResponse> {
-  return request(`/game/${gameId}/action`, {
-    method: "POST",
-    body: JSON.stringify({ action }),
-  });
+export async function sendAction(gameId: string, action: string): Promise<GameActionResponse> {
+  return request(`/game/${gameId}/action`, { method: "POST", body: JSON.stringify({ action }) });
 }
 
 export async function sendActionStream(
@@ -145,17 +131,18 @@ export async function sendActionStream(
   onChunk: (text: string) => void,
   onParsed: (suggestions: string[], state: Record<string, unknown>) => void,
   onDone: () => void,
-  onError: (err: string) => void
+  onError: (err: string) => void,
+  signal?: AbortSignal
 ): Promise<void> {
   try {
     const res = await fetch(`${API_BASE}/game/${gameId}/action/stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
+      signal,
     });
     const reader = res.body?.getReader();
     if (!reader) throw new Error("No reader");
-
     const decoder = new TextDecoder();
     while (true) {
       const { done, value } = await reader.read();
@@ -165,25 +152,13 @@ export async function sendActionStream(
       for (const line of lines) {
         if (line.startsWith("data: ")) {
           const data = line.slice(6);
-          if (data === "[DONE]") {
-            onDone();
-            return;
-          }
+          if (data === "[DONE]") { onDone(); return; }
           try {
             const json = JSON.parse(data);
-            if (json.error) {
-              onError(json.error);
-              return;
-            }
-            if (json.content) {
-              onChunk(json.content);
-            }
-            if (json.parsed) {
-              onParsed(json.parsed.suggestions || [], json.parsed.state || {});
-            }
-          } catch {
-            // skip malformed
-          }
+            if (json.error) { onError(json.error); return; }
+            if (json.content) onChunk(json.content);
+            if (json.parsed) onParsed(json.parsed.suggestions || [], json.parsed.state || {});
+          } catch { /* skip */ }
         }
       }
     }
@@ -195,4 +170,8 @@ export async function sendActionStream(
 
 export async function deleteGame(gameId: string): Promise<void> {
   await request(`/game/${gameId}`, { method: "DELETE" });
+}
+
+export async function getGameTokens(gameId: string): Promise<TokenInfo> {
+  return request(`/game/${gameId}/tokens`);
 }

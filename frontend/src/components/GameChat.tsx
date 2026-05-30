@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { GameSession } from "../services/api";
-import { getGameHistory, sendActionStream } from "../services/api";
+import { getGameHistory, sendActionStream, getGameTokens } from "../services/api";
 import { StreamDisplay } from "../hooks/useGameStream";
 import ChatMessage from "./ChatMessage";
 import StatePanel from "./StatePanel";
@@ -25,12 +25,14 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [gameState, setGameState] = useState<Record<string, unknown>>({});
   const [error, setError] = useState("");
+  const [tokens, setTokens] = useState<{ used: number; budget: number; percent: number } | null>(null);
   const { displayText: typewriterText, isComplete: typewriterComplete } = useTypewriter({
     text: displayStream,
     isActive: loading,
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     loadSession(true);
@@ -62,6 +64,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         setGameState(data.game_state || {});
         setSuggestions(data.suggestions || []);
       }
+      getGameTokens(gameId).then(setTokens).catch(() => {});
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -85,6 +88,9 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         : prev
     );
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     await sendActionStream(
       gameId,
       action,
@@ -98,9 +104,11 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         setGameState(newState);
       },
       () => {
+        abortRef.current = null;
         setStreamComplete(true);
       },
       (err) => {
+        abortRef.current = null;
         setError(err);
         loadSession().then(() => {
           setStreamingText("");
@@ -108,13 +116,26 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
           setStreamComplete(false);
           setLoading(false);
         });
-      }
+      },
+      controller.signal
     );
+  }
+
+  function handleStop() {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    loadSession().then(() => {
+      setStreamingText("");
+      setDisplayStream("");
+      setStreamComplete(false);
+      setLoading(false);
+    });
   }
 
   return (
     <div className="chat-view">
       <ChatHeader
+        tokens={tokens}
         world={session?.world}
         playerName={playerName}
         turn={session?.turn ?? 0}
@@ -169,6 +190,8 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         onChange={setInput}
         onSend={handleSend}
         disabled={loading}
+        loading={loading}
+        onStop={handleStop}
         inputRef={inputRef}
       />
     </div>
@@ -191,11 +214,13 @@ function ChatHeader({
   world,
   playerName,
   turn,
+  tokens,
   onBack,
 }: {
   world?: string;
   playerName: string;
   turn: number;
+  tokens: { used: number; budget: number; percent: number } | null;
   onBack: () => void;
 }) {
   return (
@@ -205,6 +230,21 @@ function ChatHeader({
           {world ?? "..."} - {playerName}
         </h2>
         <span className="subtitle">Turn {turn}</span>
+        {tokens && (
+          <span
+            className="subtitle"
+            style={{
+              color:
+                tokens.percent > 80
+                  ? "var(--danger)"
+                  : tokens.percent > 50
+                  ? "#e2b96f"
+                  : "var(--text-secondary)",
+            }}
+          >
+            | Tokens: {tokens.used}/{tokens.budget}
+          </span>
+        )}
       </div>
       <button className="secondary" onClick={onBack}>
         Back to Sessions
@@ -233,12 +273,16 @@ function ChatInput({
   onChange,
   onSend,
   disabled,
+  loading,
+  onStop,
   inputRef,
 }: {
   value: string;
   onChange: (v: string) => void;
   onSend: (text: string) => void;
   disabled: boolean;
+  loading: boolean;
+  onStop: () => void;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
 }) {
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -271,6 +315,15 @@ function ChatInput({
       <button className="primary" onClick={handleClick} disabled={disabled}>
         Send
       </button>
+      {loading && (
+        <button
+          className="primary"
+          onClick={onStop}
+          style={{ background: "var(--danger)" }}
+        >
+          Stop
+        </button>
+      )}
     </div>
   );
 }

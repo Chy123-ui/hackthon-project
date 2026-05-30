@@ -1,4 +1,4 @@
-"""API 路由 -- Agent 协议 + 状态管理"""
+"""API 路由 -- Agent 协议 + Tape 上下文管理"""
 import json
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -7,6 +7,9 @@ from ..core.prompt_engine import PromptEngine
 from ..core.llm_client import LLMClient
 from ..core.session import SessionManager
 from ..core.encrypt_config import encrypt_api_key, decrypt_config
+from ..core.tape import assemble_messages, compress_session
+from ..core.token_counter import count_messages
+from ..core.model_info import fetch_model_max_tokens
 from ..models.game import (
     NewGameRequest,
     NewGameResponse,
@@ -51,6 +54,21 @@ def _apply_config(config: dict) -> None:
 _apply_config(_load_server_config())
 
 
+def _tag_key_node(messages: list[dict], turn: int, key_summary: str) -> None:
+    if messages and turn > 0:
+        idx = turn * 2 - 1
+        if idx < len(messages) and messages[idx].get("role") == "assistant":
+            messages[idx]["tape"] = "key"
+            messages[idx]["key_summary"] = key_summary
+
+
+def _build_and_tag(session: dict, raw_reply: str) -> dict:
+    parsed = prompt_engine.parse_response(raw_reply)
+    if parsed.get("key_node_summary"):
+        _tag_key_node(session["messages"], session["turn"], parsed["key_node_summary"])
+    return parsed
+
+
 # ---- Config ----
 
 @router.get("/config")
@@ -65,6 +83,12 @@ async def update_config(body: ConfigUpdate):
     config.update(update_data)
     _save_server_config(config)
     _apply_config(config)
+    if settings.api_key and settings.model:
+        try:
+            max_tok = await fetch_model_max_tokens()
+            settings.context_limit = max_tok
+        except Exception:
+            pass
     return {"status": "ok"}
 
 
@@ -307,10 +331,7 @@ async def start_game(game_id: str):
     if "首先，请为这个场景开场" not in starter:
         starter += "\n请以生动叙事开场，不要重复上述场景参考的原文。"
 
-    messages = [
-        {"role": "system", "content": starter},
-        {"role": "user", "content": "(游戏开始)"},
-    ]
+    messages = [{"role": "system", "content": starter}, {"role": "user", "content": "(游戏开始)"}]
 
     try:
         result = await llm_client.chat(messages)
@@ -318,11 +339,11 @@ async def start_game(game_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
 
-    parsed = prompt_engine.parse_response(raw_reply)
-
-    session["messages"].append({"role": "user", "content": "(游戏开始)"})
-    session["messages"].append({"role": "assistant", "content": raw_reply})
+    session["messages"].append({"role": "user", "content": "(游戏开始)", "tape": "normal"})
+    session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
     session["turn"] = 1
+
+    parsed = _build_and_tag(session, raw_reply)
 
     if parsed["state_updates"]:
         session["game_state"] = prompt_engine.apply_state_updates(
@@ -353,18 +374,9 @@ async def game_action(game_id: str, body: GameAction):
         session["world"], session["player_name"], game_state
     )
 
-    if not session["messages"]:
-        first_scene = prompt_engine.render_first_message(
-            session["world"], session["player_name"]
-        )
-        starter = f"{system_prompt}\n\n现在开始游戏。开场场景：{first_scene}"
-    else:
-        starter = system_prompt
-
-    messages = [{"role": "system", "content": starter}]
-    for msg in session["messages"]:
-        messages.append(msg)
-    messages.append({"role": "user", "content": body.action})
+    messages = assemble_messages(
+        session, system_prompt, settings.context_limit, body.action
+    )
 
     try:
         result = await llm_client.chat(messages)
@@ -372,11 +384,11 @@ async def game_action(game_id: str, body: GameAction):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
 
-    parsed = prompt_engine.parse_response(raw_reply)
-
-    session["messages"].append({"role": "user", "content": body.action})
-    session["messages"].append({"role": "assistant", "content": raw_reply})
+    session["messages"].append({"role": "user", "content": body.action, "tape": "normal"})
+    session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
     session["turn"] += 1
+
+    parsed = _build_and_tag(session, raw_reply)
 
     if parsed["state_updates"]:
         session["game_state"] = prompt_engine.apply_state_updates(
@@ -407,18 +419,9 @@ async def game_action_stream(game_id: str, body: GameAction):
         session["world"], session["player_name"], game_state
     )
 
-    if not session["messages"]:
-        first_scene = prompt_engine.render_first_message(
-            session["world"], session["player_name"]
-        )
-        starter = f"{system_prompt}\n\n现在开始游戏。开场场景：{first_scene}"
-    else:
-        starter = system_prompt
-
-    messages = [{"role": "system", "content": starter}]
-    for msg in session["messages"]:
-        messages.append(msg)
-    messages.append({"role": "user", "content": body.action})
+    messages = assemble_messages(
+        session, system_prompt, settings.context_limit, body.action
+    )
 
     async def stream_response():
         full_reply = ""
@@ -430,10 +433,12 @@ async def game_action_stream(game_id: str, body: GameAction):
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
         finally:
             if full_reply:
-                parsed = prompt_engine.parse_response(full_reply)
-                session["messages"].append({"role": "user", "content": body.action})
-                session["messages"].append({"role": "assistant", "content": full_reply})
+                truncated = "</narrate>" not in full_reply
+                tape_tag = "truncated" if truncated else "normal"
+                session["messages"].append({"role": "user", "content": body.action, "tape": "normal"})
+                session["messages"].append({"role": "assistant", "content": full_reply, "tape": tape_tag})
                 session["turn"] += 1
+                parsed = _build_and_tag(session, full_reply)
                 if parsed["state_updates"]:
                     session["game_state"] = prompt_engine.apply_state_updates(
                         game_state, parsed["state_updates"]
@@ -469,3 +474,22 @@ async def delete_game(game_id: str):
 @router.get("/games")
 async def list_games():
     return session_manager.list_sessions()
+
+
+@router.get("/game/{game_id}/tokens")
+async def game_tokens(game_id: str):
+    session = session_manager.load(game_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    system_prompt = prompt_engine.render_system_prompt(
+        session["world"], session["player_name"], session.get("game_state", {})
+    )
+
+    msgs = assemble_messages(session, system_prompt, settings.context_limit)
+    used = count_messages(msgs)
+    return {
+        "used": used,
+        "budget": settings.context_limit,
+        "percent": round(used / max(settings.context_limit, 1) * 100, 1),
+    }
