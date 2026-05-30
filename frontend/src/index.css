@@ -411,7 +411,7 @@ button:disabled {
 
 .template-column textarea {
   flex: 1;
-  min-height: 300px;
+  min-height: 0;
   padding: 12px;
   background: var(--bg-input);
   border: 1px solid var(--border);
@@ -420,6 +420,7 @@ button:disabled {
   font-family: var(--font-mono);
   font-size: 13px;
   resize: none;
+  overflow-y: auto;
 }
 
 .template-column textarea:focus {
