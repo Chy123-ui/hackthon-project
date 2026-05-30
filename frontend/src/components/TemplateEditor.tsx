@@ -10,6 +10,7 @@ import {
   previewTemplate,
   exportWorld,
   importWorld,
+  deleteWorld,
 } from "../services/api";
 import NewWorldDialog from "./NewWorldDialog";
 import WorldFileEditor from "./WorldFileEditor";
@@ -181,6 +182,16 @@ export default function TemplateEditor() {
         onNewWorld={() => setShowNewWorld(true)}
         onImport={() => fileInputRef.current?.click()}
         onExport={handleExport}
+        onDelete={async (w) => {
+          try {
+            await deleteWorld(w);
+            setStatus("deleted");
+            setTimeout(() => setStatus(""), 2000);
+            await loadAll();
+          } catch (e: unknown) {
+            setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+          }
+        }}
       />
 
       {showNewWorld && (

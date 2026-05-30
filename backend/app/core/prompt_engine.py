@@ -171,3 +171,11 @@ class PromptEngine:
             for d in self.worlds_dir.iterdir()
             if d.is_dir() and (d / "world.yaml").exists()
         ])
+
+    def delete_world(self, world: str) -> bool:
+        import shutil
+        path = self.worlds_dir / world
+        if path.exists() and path.is_dir():
+            shutil.rmtree(path)
+            return True
+        return False

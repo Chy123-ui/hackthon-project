@@ -152,6 +152,13 @@ async def update_preferences_template(world: str, body: dict):
     return {"status": "ok"}
 
 
+@router.delete("/templates/{world}")
+async def delete_world_template(world: str):
+    if prompt_engine.delete_world(world):
+        return {"status": "ok"}
+    raise HTTPException(status_code=404, detail=f"World '{world}' not found")
+
+
 @router.get("/templates/{world}/preview")
 async def preview_system_prompt(world: str):
     prompt = prompt_engine.render_system_prompt(world, "预览角色名")

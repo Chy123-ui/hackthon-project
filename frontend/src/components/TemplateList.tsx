@@ -5,6 +5,7 @@ interface Props {
   onNewWorld: () => void;
   onImport: () => void;
   onExport: (world: string) => void;
+  onDelete: (world: string) => void;
 }
 
 export default function TemplateList({
@@ -14,6 +15,7 @@ export default function TemplateList({
   onNewWorld,
   onImport,
   onExport,
+  onDelete,
 }: Props) {
   return (
     <div style={{ padding: 16, flex: 1, overflowY: "auto" }}>
@@ -60,13 +62,22 @@ export default function TemplateList({
                 world / player / preferences
               </p>
             </div>
-            <button
-              className="secondary"
-              onClick={(e) => { e.stopPropagation(); onExport(w); }}
-              style={{ fontSize: 12, padding: "4px 12px" }}
-            >
-              Export
-            </button>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button
+                className="secondary"
+                onClick={(e) => { e.stopPropagation(); onExport(w); }}
+                style={{ fontSize: 12, padding: "4px 12px" }}
+              >
+                Export
+              </button>
+              <button
+                className="danger"
+                onClick={(e) => { e.stopPropagation(); onDelete(w); }}
+                style={{ fontSize: 12, padding: "4px 12px" }}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>

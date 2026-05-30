@@ -81,6 +81,10 @@ export async function updateWorldTemplate(world: string, data: Record<string, un
   await request(`/templates/${world}/world`, { method: "PUT", body: JSON.stringify(data) });
 }
 
+export async function deleteWorld(world: string): Promise<void> {
+  await request(`/templates/${world}`, { method: "DELETE" });
+}
+
 export async function getPlayerTemplate(world: string): Promise<Record<string, unknown>> {
   return request(`/templates/${world}/player`);
 }
