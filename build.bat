@@ -41,7 +41,10 @@ echo start "" http://localhost:8000 >> "%OUT_DIR%\start.bat"
 echo .venv\Scripts\python run.py >> "%OUT_DIR%\start.bat"
 copy "%BACKEND_DIR%\run.py" "%OUT_DIR%\run.py" >nul
 
+echo [5/5] Creating ZIP...
+powershell -Command "Compress-Archive -Path '%OUT_DIR%' -DestinationPath '%BUILD_DIR%\re-life.zip' -Force"
+
 echo ============================================
-echo   Build complete: build/re-life/
+echo   Build complete: build/re-life.zip
 echo ============================================
 pause
