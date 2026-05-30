@@ -4,15 +4,24 @@ echo  AI WenYou - Launching Backend + Frontend
 echo ============================================
 echo.
 
+echo [Setup] Backend...
 cd /d "%~dp0backend"
 
 if not exist ".venv\Scripts\python.exe" (
-    echo [Setup] Creating virtual environment...
+    echo   Creating virtual environment...
     python -m venv .venv
 )
-
-echo [Setup] Syncing dependencies...
+echo   Syncing Python dependencies...
 .venv\Scripts\pip install -q -r requirements.txt
+
+echo.
+echo [Setup] Frontend...
+cd /d "%~dp0frontend"
+
+if not exist "node_modules" (
+    echo   Installing Node dependencies...
+    npm install
+)
 
 cd /d "%~dp0"
 
