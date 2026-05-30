@@ -8,14 +8,20 @@ from .config import settings
 
 
 def _build_extra(w: dict, p: dict, pref: dict) -> str:
-    """Extract extra YAML fields not in the standard schema"""
+    """Extract extra YAML fields and output state key format instructions"""
     known = {"name", "description", "starting_scene", "background", "narrative_style", "tone", "pacing", "detail_level"}
     lines = []
-    for label, data in [("世界额外设定", w), ("角色额外设定", p), ("偏好额外设定", pref)]:
+    for _, data in [("世界额外设定", w), ("角色额外设定", p), ("偏好额外设定", pref)]:
         extras = {k: v for k, v in data.items() if k not in known}
         if extras:
             for k, v in extras.items():
+                label = k
+                if isinstance(v, dict) and "label" in v:
+                    label = str(v["label"])
+                elif isinstance(v, dict) and "name" in v:
+                    label = str(v["name"])
                 lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
+                lines.append(f"    → 在 state 中使用: <set key=\"{k}\" label=\"{label}\">值</set>")
     return "\n".join(lines) if lines else "无"
 
 
