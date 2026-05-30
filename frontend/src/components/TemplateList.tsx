@@ -89,7 +89,7 @@ export default function TemplateList({
                   checked={selected.has(w)}
                   onChange={() => onSelectToggle(w)}
                   onClick={(e) => e.stopPropagation()}
-                  style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--accent)" }}
+                  style={{ width: 16, height: 16, cursor: "pointer" }}
                 />
               )}
               <div

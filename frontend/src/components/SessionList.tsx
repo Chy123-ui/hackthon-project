@@ -39,7 +39,7 @@ export default function SessionList({ sessions, onOpen, onDelete, multiSelect, s
                 checked={selected.has(s.id)}
                 onChange={() => onSelectToggle(s.id)}
                 onClick={(e) => e.stopPropagation()}
-                style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--accent)" }}
+                style={{ width: 16, height: 16, cursor: "pointer" }}
               />
             )}
             <div
