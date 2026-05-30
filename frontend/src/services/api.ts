@@ -45,7 +45,6 @@ export interface Config {
   model?: string;
   max_tokens?: number;
   gen_max_tokens?: number;
-  suggestions_mode?: string;
   temperature?: number;
 }
 

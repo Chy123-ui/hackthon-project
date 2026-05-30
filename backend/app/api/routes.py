@@ -54,8 +54,6 @@ def _apply_config(config: dict) -> None:
         settings.temperature = config["temperature"]
     if "gen_max_tokens" in config:
         settings.gen_max_tokens = config["gen_max_tokens"]
-    if "suggestions_mode" in config:
-        settings.suggestions_mode = config["suggestions_mode"]
 
 
 _apply_config(_load_server_config())
