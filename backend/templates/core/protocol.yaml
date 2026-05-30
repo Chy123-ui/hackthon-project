@@ -52,7 +52,7 @@ protocol: |
   错误的格式（绝对不要这样写）：
   [location: 酒馆]   <-- 错误！
   location: 酒馆      <-- 错误！
-  flags: {}           <-- 错误！
+  flags: {{}}           <-- 错误！
   
   每种操作的使用方法：
   - <set key="x">value</set>    单值覆盖（用于 location, hp 等单一值）
