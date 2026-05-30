@@ -10,7 +10,8 @@ class Settings(BaseSettings):
     temperature: float = 0.8
     context_limit: int = 131072
     data_dir: Path = Path(__file__).parent.parent.parent / "data"
-    templates_dir: Path = Path(__file__).parent.parent.parent / "templates"
+    templates_dir: Path = Path(__file__).parent.parent.parent / "data" / "templates"
+    core_templates_dir: Path = Path(__file__).parent.parent.parent / "core_templates"
 
     model_config = {"env_prefix": "AIWENYOU_"}
 
@@ -18,3 +19,4 @@ class Settings(BaseSettings):
 settings = Settings()
 settings.data_dir.mkdir(parents=True, exist_ok=True)
 (settings.data_dir / "sessions").mkdir(exist_ok=True)
+(settings.data_dir / "templates" / "worlds").mkdir(parents=True, exist_ok=True)

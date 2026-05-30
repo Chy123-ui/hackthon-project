@@ -8,6 +8,7 @@ from .config import settings
 class PromptEngine:
     def __init__(self):
         self.templates_dir = settings.templates_dir
+        self.core_dir = settings.core_templates_dir
 
     def _load_yaml(self, path) -> dict:
         with open(path, "r", encoding="utf-8") as f:
@@ -21,14 +22,14 @@ class PromptEngine:
     # ---- Core (locked) ----
 
     def load_protocol(self) -> str:
-        path = self.templates_dir / "core" / "protocol.yaml"
+        path = self.core_dir / "protocol.yaml"
         if path.exists():
             data = self._load_yaml(path)
             return data.get("protocol", "")
         return ""
 
     def load_safety(self) -> str:
-        path = self.templates_dir / "core" / "safety.yaml"
+        path = self.core_dir / "safety.yaml"
         if path.exists():
             data = self._load_yaml(path)
             return data.get("rules", "")
