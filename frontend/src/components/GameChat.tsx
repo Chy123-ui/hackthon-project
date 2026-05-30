@@ -233,7 +233,7 @@ function ChatHeader({
         <h2 style={{ display: "inline" }}>
           {world ?? "..."} - {playerName}
         </h2>
-        <span className="subtitle">Turn {turn}</span>
+        <span className="subtitle">第 {turn} 回合</span>
         {tokens && (
           <span
             className="subtitle"
@@ -251,7 +251,7 @@ function ChatHeader({
         )}
       </div>
       <button className="secondary" onClick={onBack}>
-        Back to Sessions
+        返回列表
       </button>
     </div>
   );
@@ -306,28 +306,28 @@ function ChatInput({
     <div className="chat-input-area">
       <textarea
         ref={inputRef}
-        placeholder={
-          disabled
-            ? "Waiting for GM..."
-            : "What do you do? (Enter to send, Shift+Enter for newline)"
-        }
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-      />
-      <button className="primary" onClick={handleClick} disabled={disabled}>
-        Send
-      </button>
-      {loading && (
-        <button
-          className="primary"
-          onClick={onStop}
-          style={{ background: "var(--danger)" }}
-        >
-          Stop
+          placeholder={
+            disabled
+              ? "等待 GM..."
+              : "你想做什么？（Enter 发送，Shift+Enter 换行）"
+          }
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={disabled}
+        />
+        <button className="primary" onClick={handleClick} disabled={disabled}>
+          发送
         </button>
-      )}
+        {loading && (
+          <button
+            className="primary"
+            onClick={onStop}
+            style={{ background: "var(--danger)" }}
+          >
+            停止
+          </button>
+        )}
     </div>
   );
 }

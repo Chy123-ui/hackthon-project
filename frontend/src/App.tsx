@@ -4,7 +4,6 @@ import HistoryView from "./components/HistoryView";
 import TemplateEditor from "./components/TemplateEditor";
 import SettingsPanel from "./components/SettingsPanel";
 import { useTheme } from "./context/ThemeContext";
-import { useLang } from "./context/LanguageContext";
 import "./App.css";
 
 type Tab = "game" | "history" | "templates" | "settings";
@@ -17,7 +16,6 @@ function App() {
   const [settingsKey, setSettingsKey] = useState(0);
   const [historySearch, setHistorySearch] = useState("");
   const { theme, toggleTheme } = useTheme();
-  const { lang, setLang } = useLang();
 
   function handleTabClick(id: Tab) {
     if (id === "game" && tab === "game") {
@@ -34,10 +32,10 @@ function App() {
   }
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "game", label: "Game" },
-    { id: "history", label: "History" },
-    { id: "templates", label: "Templates" },
-    { id: "settings", label: "Settings" },
+    { id: "game", label: "游戏" },
+    { id: "history", label: "历史" },
+    { id: "templates", label: "模板" },
+    { id: "settings", label: "设置" },
   ];
 
   return (
@@ -60,14 +58,6 @@ function App() {
             onChange={(e) => setHistorySearch(e.target.value)}
           />
         </div>
-        <button
-          className="tab-btn lang-toggle"
-          onClick={() => setLang(lang === "zh" ? "en" : "zh")}
-          title={lang === "zh" ? "Switch to English" : "切换到中文"}
-          style={{ marginLeft: "auto" }}
-        >
-          {lang === "zh" ? "EN" : "中"}
-        </button>
         <button
           className="tab-btn theme-toggle"
           onClick={toggleTheme}

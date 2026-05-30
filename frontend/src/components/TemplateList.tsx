@@ -32,15 +32,15 @@ export default function TemplateList({
   return (
     <div style={{ padding: 16, flex: 1, overflowY: "auto" }}>
       <h2 style={{ color: "var(--accent)", fontSize: 20, marginBottom: 16 }}>
-        Template Manager
+        模板管理
       </h2>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <button className="primary" onClick={onNewWorld}>
-          + New World
+          + 新建世界
         </button>
         <button className="secondary" onClick={onToggleMulti}>
-          {multiMode ? "Cancel" : "Select"}
+          {multiMode ? "取消" : "选择"}
         </button>
       </div>
 
