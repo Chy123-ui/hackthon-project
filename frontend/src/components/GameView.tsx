@@ -3,6 +3,7 @@ import type { GameListItem } from "../services/api";
 import {
   listGames,
   newGame,
+  startGame,
   deleteGame,
   listWorlds,
 } from "../services/api";
@@ -45,6 +46,7 @@ export default function GameView(_props: Props) {
       setLoading(true);
       setError("");
       const { game_id } = await newGame(selectedWorld, playerName);
+      await startGame(game_id);
       setActiveSession(game_id);
       await loadAll();
     } catch (e: unknown) {

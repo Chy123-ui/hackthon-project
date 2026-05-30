@@ -116,6 +116,10 @@ export async function newGame(world: string, player_name: string): Promise<{ gam
   });
 }
 
+export async function startGame(gameId: string): Promise<GameActionResponse> {
+  return request(`/game/${gameId}/start`, { method: "POST" });
+}
+
 export async function listGames(): Promise<GameListItem[]> {
   return request("/games");
 }

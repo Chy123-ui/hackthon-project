@@ -10,8 +10,10 @@ import {
   previewTemplate,
   getCoreProtocol,
   getCoreSafety,
-  generateWorld,
 } from "../services/api";
+import NewWorldDialog from "./NewWorldDialog";
+import CorePreview from "./CorePreview";
+import WorldFileEditor from "./WorldFileEditor";
 
 type WorldFile = "world" | "player" | "preferences";
 
@@ -30,15 +32,9 @@ export default function TemplateEditor() {
 
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
-
   const [showNewWorld, setShowNewWorld] = useState(false);
-  const [newConcept, setNewConcept] = useState("");
-  const [generating, setGenerating] = useState(false);
 
-  useEffect(() => {
-    loadAll();
-  }, []);
-
+  useEffect(() => void loadAll(), []);
   useEffect(() => {
     if (debugMode && !protocol) {
       Promise.all([getCoreProtocol(), getCoreSafety()])
@@ -46,10 +42,8 @@ export default function TemplateEditor() {
         .catch(() => {});
     }
   }, [debugMode]);
-
   useEffect(() => {
-    if (!selectedWorld) return;
-    loadWorldFiles(selectedWorld);
+    if (selectedWorld) loadWorldFiles(selectedWorld);
   }, [selectedWorld]);
 
   async function loadAll() {
@@ -79,37 +73,23 @@ export default function TemplateEditor() {
     }
   }
 
-  async function handleGenerate() {
-    const concept = newConcept.trim();
-    if (!concept) return;
-    setGenerating(true);
-    setStatus("");
-    try {
-      const result = await generateWorld(concept);
-      setShowNewWorld(false);
-      setNewConcept("");
-      await loadAll();
-      setSelectedWorld(result.world);
-      setStatus("saved");
-      setTimeout(() => setStatus(""), 2000);
-    } catch (e: unknown) {
-      setStatus("error: " + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      setGenerating(false);
-    }
-  }
+  const fileMap: Record<WorldFile, { data: string; update: (w: string, d: Record<string, unknown>) => Promise<void> }> = {
+    world: { data: worldData, update: updateWorldTemplate },
+    player: { data: playerData, update: updatePlayerTemplate },
+    preferences: { data: preferencesData, update: updatePreferencesTemplate },
+  };
+
+  const dataSetters: Record<WorldFile, (v: string) => void> = {
+    world: setWorldData,
+    player: setPlayerData,
+    preferences: setPreferencesData,
+  };
 
   async function handleSave() {
     try {
       setSaving(true);
-      const fileMap: Record<WorldFile, { data: string; update: (w: string, d: Record<string, unknown>) => Promise<void> }> = {
-        world: { data: worldData, update: updateWorldTemplate },
-        player: { data: playerData, update: updatePlayerTemplate },
-        preferences: { data: preferencesData, update: updatePreferencesTemplate },
-      };
       const file = fileMap[activeFile];
-      const parsed = JSON.parse(file.data);
-      await file.update(selectedWorld, parsed);
+      await file.update(selectedWorld, JSON.parse(file.data));
       const p = await previewTemplate(selectedWorld);
       setPreview(p.preview || "");
       setStatus("saved");
@@ -119,24 +99,6 @@ export default function TemplateEditor() {
     } finally {
       setSaving(false);
     }
-  }
-
-  function getActiveData(): string {
-    const map: Record<WorldFile, string> = {
-      world: worldData,
-      player: playerData,
-      preferences: preferencesData,
-    };
-    return map[activeFile];
-  }
-
-  function setActiveData(value: string) {
-    const setters: Record<WorldFile, (v: string) => void> = {
-      world: setWorldData,
-      player: setPlayerData,
-      preferences: setPreferencesData,
-    };
-    setters[activeFile](value);
   }
 
   return (
@@ -155,123 +117,32 @@ export default function TemplateEditor() {
         </label>
       </div>
 
-      {debugMode && protocol && (
-        <div style={{ marginBottom: 20 }}>
-          <h3 style={{ color: "var(--danger)", fontSize: 14, marginBottom: 8 }}>
-            Core Templates (Read Only)
-          </h3>
-          <div className="template-row">
-            <div className="template-column">
-              <h3>Agent Protocol</h3>
-              <textarea readOnly value={protocol} style={{ minHeight: 250 }} />
-            </div>
-            <div className="template-column">
-              <h3>Safety Rules</h3>
-              <textarea readOnly value={safety} style={{ minHeight: 250 }} />
-            </div>
-          </div>
-        </div>
-      )}
+      {debugMode && <CorePreview protocol={protocol} safety={safety} />}
 
-      {/* New World Dialog */}
       {showNewWorld && (
-        <div style={{
-          marginBottom: 16, padding: 16,
-          background: "var(--bg-card)", border: "1px solid var(--accent)",
-          borderRadius: "var(--radius)",
-        }}>
-          <h3 style={{ color: "var(--accent)", fontSize: 14, marginBottom: 8 }}>
-            AI Generate New World
-          </h3>
-          <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
-            Describe the world you want to create. The AI will generate world, player, and preferences templates.
-          </p>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              type="text"
-              placeholder='e.g. "cyberpunk detective story in Neo Tokyo"'
-              value={newConcept}
-              onChange={(e) => setNewConcept(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-              disabled={generating}
-              style={{
-                flex: 1,
-                padding: "10px 14px",
-                background: "var(--bg-input)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                color: "var(--text)",
-                fontSize: 14,
-              }}
-            />
-            <button className="primary" onClick={handleGenerate} disabled={generating || !newConcept.trim()}>
-              {generating ? "Generating..." : "Generate"}
-            </button>
-            <button className="secondary" onClick={() => setShowNewWorld(false)} disabled={generating}>
-              Cancel
-            </button>
-          </div>
-        </div>
+        <NewWorldDialog
+          onCreated={(world) => {
+            setShowNewWorld(false);
+            loadAll().then(() => setSelectedWorld(world));
+          }}
+          onError={(msg) => setStatus("error: " + msg)}
+        />
       )}
 
-      <div>
-
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-          <button className="primary" onClick={() => setShowNewWorld(true)}>
-            + New World
-          </button>
-
-          <select
-            value={selectedWorld}
-            onChange={(e) => setSelectedWorld(e.target.value)}
-            style={{
-              padding: "8px 12px",
-              background: "var(--bg-input)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              color: "var(--text)",
-              fontSize: 14,
-              minWidth: 150,
-            }}
-          >
-            {worlds.map((w) => (
-              <option key={w} value={w}>{w}</option>
-            ))}
-          </select>
-
-          {(["world", "player", "preferences"] as WorldFile[]).map((f) => (
-            <button
-              key={f}
-              className={`tab-btn ${activeFile === f ? "active" : ""}`}
-              onClick={() => setActiveFile(f)}
-              style={{ padding: "8px 16px", fontSize: 13 }}
-            >
-              {f}
-            </button>
-          ))}
-
-          <button className="primary" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : `Save ${activeFile}`}
-          </button>
-          {status === "saved" && <span className="status-badge saved">Saved</span>}
-          {status.startsWith("error") && <span className="status-badge error">{status}</span>}
-        </div>
-
-        <div className="template-row">
-          <div className="template-column">
-            <h3>{activeFile}.yaml</h3>
-            <textarea
-              value={getActiveData()}
-              onChange={(e) => setActiveData(e.target.value)}
-              style={{ minHeight: 300 }}
-            />
-          </div>
-          <div className="template-column">
-            <h3>Rendered System Prompt Preview</h3>
-            <textarea readOnly value={preview} style={{ minHeight: 300 }} />
-          </div>
-        </div>
-      </div>
+      <WorldFileEditor
+        worlds={worlds}
+        selectedWorld={selectedWorld}
+        onSelectWorld={setSelectedWorld}
+        activeFile={activeFile}
+        onSelectFile={setActiveFile}
+        fileData={fileMap[activeFile].data}
+        onFileDataChange={dataSetters[activeFile]}
+        preview={preview}
+        onSave={handleSave}
+        saving={saving}
+        status={status}
+        onNewWorld={() => setShowNewWorld(true)}
+      />
     </div>
   );
 }

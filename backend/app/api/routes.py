@@ -286,6 +286,57 @@ async def new_game(body: NewGameRequest):
     )
 
 
+@router.post("/game/{game_id}/start")
+async def start_game(game_id: str):
+    session = session_manager.load(game_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if session["messages"]:
+        return {"status": "already_started"}
+
+    game_state = session.get("game_state", {})
+    system_prompt = prompt_engine.render_system_prompt(
+        session["world"], session["player_name"], game_state
+    )
+    first_scene = prompt_engine.render_first_message(
+        session["world"], session["player_name"]
+    )
+    starter = f"{system_prompt}\n\n现在开始游戏。开场场景：{first_scene}"
+
+    messages = [
+        {"role": "system", "content": starter},
+        {"role": "user", "content": "(游戏开始)"},
+    ]
+
+    try:
+        result = await llm_client.chat(messages)
+        raw_reply = result["choices"][0]["message"]["content"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
+
+    parsed = prompt_engine.parse_response(raw_reply)
+
+    session["messages"].append({"role": "user", "content": "(游戏开始)"})
+    session["messages"].append({"role": "assistant", "content": raw_reply})
+    session["turn"] = 1
+
+    if parsed["state_updates"]:
+        session["game_state"] = prompt_engine.apply_state_updates(
+            game_state, parsed["state_updates"]
+        )
+
+    session_manager.save(game_id, session)
+
+    return {
+        "content": parsed["narrate"] or raw_reply,
+        "thought": parsed["thought"],
+        "suggestions": parsed["suggestions"],
+        "state": session["game_state"],
+        "turn": 1,
+    }
+
+
 @router.post("/game/{game_id}/action")
 async def game_action(game_id: str, body: GameAction):
     session = session_manager.load(game_id)
