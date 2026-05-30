@@ -61,12 +61,11 @@ protocol: |
   flags: {{}}           <-- 错误！
   
   每种操作的使用方法：
-  - <set key="x">value</set>    单值覆盖（用于 location, hp 等单一值）
-  - <add key="x" value="v"/>    列表追加（用于 inventory, npcs_met, quests, flags 等集合）
+  - <set key="x">value</set>    单值覆盖（用于 位置、生命值 等单一值）
+  - <add key="x" value="v"/>    列表追加（用于 背包、任务 等集合）
   - <del key="x"/>              删除某个键
-
-  所有集合类型（inventory, quests_active, quests_completed, npcs_met, flags）
-  都使用 <add> 逐条追加，不要用逗号拼接。
+  所有状态键必须使用中文命名（如 "位置" 而非 "location"，"背包" 而非 "inventory"）。
+  示例：<set key="位置">金叶城·醉龙酒馆</set>
 
   首次对话时，你应当在第一个 <state> 块中初始化基础状态：
   <state>
