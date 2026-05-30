@@ -1,5 +1,18 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { generateWorld } from "../services/api";
+
+const EXAMPLES = [
+  "cyberpunk detective in rain-soaked Neo Tokyo",
+  "fantasy world where magic is powered by memories",
+  "post-apocalyptic wasteland ruled by sentient machines",
+  "steampunk airship city floating above the clouds",
+  "underwater civilization threatened by an ancient beast",
+  "wild west frontier town with occult secrets",
+  "space station on the edge of a black hole",
+  "victorian London where ghosts are real and commonplace",
+  "martial arts academy hidden in a bamboo forest",
+  "medieval kingdom preparing for a dragon awakening",
+];
 
 interface Props {
   onCreated: (world: string) => void;
@@ -9,9 +22,10 @@ interface Props {
 export default function NewWorldDialog({ onCreated, onError }: Props) {
   const [concept, setConcept] = useState("");
   const [generating, setGenerating] = useState(false);
+  const example = useRef(EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)]);
 
-  async function handleGenerate() {
-    const c = concept.trim();
+  async function handleGenerate(optConcept?: string) {
+    const c = (optConcept ?? concept).trim();
     if (!c) return;
     setGenerating(true);
     try {
@@ -44,10 +58,16 @@ export default function NewWorldDialog({ onCreated, onError }: Props) {
       <div style={{ display: "flex", gap: 8 }}>
         <input
           type="text"
-          placeholder='e.g. "cyberpunk detective in Neo Tokyo"'
+          placeholder={`e.g. "${example.current}"`}
           value={concept}
           onChange={(e) => setConcept(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !generating) {
+              const c = concept.trim();
+              if (c) { handleGenerate(c); }
+              else { setConcept(example.current); }
+            }
+          }}
           disabled={generating}
           style={{
             flex: 1,
@@ -61,8 +81,8 @@ export default function NewWorldDialog({ onCreated, onError }: Props) {
         />
         <button
           className="primary"
-          onClick={handleGenerate}
-          disabled={generating || !concept.trim()}
+          onClick={() => handleGenerate()}
+          disabled={generating}
         >
           {generating ? "Generating..." : "Generate"}
         </button>

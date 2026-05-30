@@ -10,6 +10,7 @@ import {
   previewTemplate,
   exportWorld,
   importWorld,
+  deleteWorld,
 } from "../services/api";
 import NewWorldDialog from "./NewWorldDialog";
 import WorldFileEditor from "./WorldFileEditor";
@@ -100,8 +101,16 @@ export default function TemplateEditor() {
     if (!file) return;
     try {
       setStatus("Importing...");
-      const text = await file.text();
-      const result = await importWorld(text, file.name);
+      const ext = file.name.split(".").pop()?.toLowerCase() || "";
+      const binary = ["docx", "doc"].includes(ext);
+      let content: string;
+      if (binary) {
+        const buf = await file.arrayBuffer();
+        content = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      } else {
+        content = await file.text();
+      }
+      const result = await importWorld({ content, filename: file.name, binary });
       await loadAll();
       openEditor(result.world);
       setStatus("imported");
@@ -173,6 +182,16 @@ export default function TemplateEditor() {
         onNewWorld={() => setShowNewWorld(true)}
         onImport={() => fileInputRef.current?.click()}
         onExport={handleExport}
+        onDelete={async (w) => {
+          try {
+            await deleteWorld(w);
+            setStatus("deleted");
+            setTimeout(() => setStatus(""), 2000);
+            await loadAll();
+          } catch (e: unknown) {
+            setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+          }
+        }}
       />
 
       {showNewWorld && (
@@ -188,7 +207,7 @@ export default function TemplateEditor() {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".txt,.json,.yaml,.md"
+        accept=".txt,.json,.yaml,.md,.docx,.doc"
         style={{ display: "none" }}
         onChange={handleImport}
       />

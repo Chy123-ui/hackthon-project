@@ -81,6 +81,10 @@ export async function updateWorldTemplate(world: string, data: Record<string, un
   await request(`/templates/${world}/world`, { method: "PUT", body: JSON.stringify(data) });
 }
 
+export async function deleteWorld(world: string): Promise<void> {
+  await request(`/templates/${world}`, { method: "DELETE" });
+}
+
 export async function getPlayerTemplate(world: string): Promise<Record<string, unknown>> {
   return request(`/templates/${world}/player`);
 }
@@ -109,8 +113,8 @@ export async function exportWorld(world: string): Promise<{ world: Record<string
   return request(`/templates/${world}/export`);
 }
 
-export async function importWorld(content: string, filename: string): Promise<{ world: string; files: string[]; source: string }> {
-  return request("/templates/import", { method: "POST", body: JSON.stringify({ content, filename }) });
+export async function importWorld(payload: { content: string; filename: string; binary?: boolean }): Promise<{ world: string; files: string[]; source: string }> {
+  return request("/templates/import", { method: "POST", body: JSON.stringify(payload) });
 }
 
 export async function newGame(world: string, player_name: string): Promise<{ game_id: string }> {
