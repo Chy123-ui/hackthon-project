@@ -109,13 +109,15 @@ export default function TemplateList({
               >
                 导出
               </button>
-              <button
-                className="danger"
-                onClick={(e) => { e.stopPropagation(); onDelete(w); }}
-                style={{ fontSize: 12, padding: "4px 12px" }}
-              >
-                删除
-              </button>
+              {!multiSelect && (
+                <button
+                  className="danger"
+                  onClick={(e) => { e.stopPropagation(); onDelete(w); }}
+                  style={{ fontSize: 12, padding: "4px 12px" }}
+                >
+                  删除
+                </button>
+              )}
             </div>
           </div>
         ))}
