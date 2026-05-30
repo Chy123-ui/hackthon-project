@@ -8,6 +8,21 @@ interface Props {
   onBack: () => void;
 }
 
+function extractTag(raw: string, tag: string): string {
+  const regex = new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`);
+  const m = raw.match(regex);
+  return m ? m[1].trim() : "";
+}
+
+function stripTags(raw: string): string {
+  return raw
+    .replace(/<thought>[\s\S]*?<\/thought>/g, "")
+    .replace(/<state>[\s\S]*?<\/state>/g, "")
+    .replace(/<suggestions>[\s\S]*?<\/suggestions>/g, "")
+    .replace(/<\/?narrate>/g, "")
+    .trim();
+}
+
 export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [session, setSession] = useState<GameSession | null>(null);
   const [input, setInput] = useState("");
@@ -16,6 +31,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [gameState, setGameState] = useState<Record<string, unknown>>({});
   const [error, setError] = useState("");
+  const [expandedThoughts, setExpandedThoughts] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -81,9 +97,22 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     }
   }
 
+  function toggleThought(index: number) {
+    setExpandedThoughts((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }
+
   function displayContent(raw: string): string {
     const match = raw.match(/<narrate>([\s\S]*?)<\/narrate>/);
     return match ? match[1].trim() : raw;
+  }
+
+  function displayStream(raw: string): string {
+    return stripTags(raw);
   }
 
   return (
@@ -102,23 +131,50 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <div className="chat-messages" style={{ flex: 1 }}>
-          {session?.messages.map((msg, i) => (
-            <div key={i} className={`message ${msg.role}`}>
-              <div className="role-label">
-                {msg.role === "user" ? playerName : "GM"}
+          {session?.messages.map((msg, i) => {
+            const thought = msg.role === "assistant" ? extractTag(msg.content, "thought") : "";
+            const expanded = expandedThoughts.has(i);
+
+            return (
+              <div key={i}>
+                <div className={`message ${msg.role}`}>
+                  <div className="role-label">
+                    {msg.role === "user" ? playerName : "GM"}
+                  </div>
+                  {displayContent(msg.content)}
+                </div>
+                {thought && (
+                  <div style={{ textAlign: "left", marginTop: -10, marginBottom: 12 }}>
+                    <button
+                      className="secondary"
+                      onClick={() => toggleThought(i)}
+                      style={{ fontSize: 11, padding: "3px 10px", marginLeft: 16 }}
+                    >
+                      {expanded ? "Hide thought" : "Show thought"}
+                    </button>
+                    {expanded && (
+                      <div
+                        className="message assistant"
+                        style={{
+                          opacity: 0.55,
+                          fontSize: 12,
+                          fontStyle: "italic",
+                          marginTop: 4,
+                          marginLeft: 16,
+                        }}
+                      >
+                        {thought}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              {displayContent(msg.content)}
-            </div>
-          ))}
+            );
+          })}
           {streamingText && (
             <div className="message assistant">
               <div className="role-label">GM</div>
-              {streamingText
-                .replace(/<thought>[\s\S]*?<\/thought>/g, "")
-                .replace(/<state>[\s\S]*?<\/state>/g, "")
-                .replace(/<suggestions>[\s\S]*?<\/suggestions>/g, "")
-                .replace(/<\/?narrate>/g, "")
-                .trim()}
+              {displayStream(streamingText)}
             </div>
           )}
           {loading && !streamingText && (
