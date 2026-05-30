@@ -606,38 +606,140 @@ button.danger:hover {
 /* ---- State Panel (glass sidebar) ---- */
 
 .state-panel {
+  position: relative;
   width: 240px;
-  padding: 12px;
-  background: var(--glass-bg);
+  padding: 16px 14px;
+  background:
+    linear-gradient(180deg, var(--glass-bg), color-mix(in srgb, var(--bg-secondary) 72%, transparent)),
+    radial-gradient(circle at 50% 0%, var(--accent-glow), transparent 58%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-left: 1px solid var(--border);
+  border-left: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, white 5%, transparent);
   overflow-y: auto;
   font-size: 13px;
+  transition: width 0.25s ease, padding 0.25s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.state-panel.collapsed {
+  width: 44px;
+  padding: 16px 8px;
+  overflow: hidden;
+}
+
+.state-panel-toggle {
+  position: absolute;
+  top: 14px;
+  right: 10px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-card) 84%, transparent);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.state-panel-toggle:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.state-panel.collapsed .state-panel-toggle {
+  right: 9px;
+}
+
+.state-panel-rail-count {
+  position: absolute;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--bg-card) 84%, transparent);
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.state-panel-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 1;
+  transition: opacity 0.16s ease;
+}
+
+.state-panel.collapsed .state-panel-inner {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.state-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 34px 8px 2px;
 }
 
 .state-panel-title {
   color: var(--text-secondary);
-  margin-bottom: 8px;
   font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
+}
+
+.state-panel-count {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--bg-card) 78%, transparent);
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
 }
 
 .state-panel-item {
-  margin-bottom: 4px;
-  padding: 4px 8px;
-  background: var(--bg-card);
-  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 10px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 94%, white 4%), var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
   font-size: 12px;
 }
 
 .state-panel-key {
   color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .state-panel-value {
   color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 /* ---- Confirm Dialog ---- */
