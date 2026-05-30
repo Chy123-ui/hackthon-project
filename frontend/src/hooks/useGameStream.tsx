@@ -24,6 +24,7 @@ export function displayNarrate(raw: string): string {
 export class StreamDisplay {
   private buffer = "";
   private mode: "idle" | "thought" | "narrate" | "state" | "suggestions" = "idle";
+  private _lastLen = 0;
 
   feed(chunk: string): string {
     this.buffer += chunk;
@@ -50,13 +51,15 @@ export class StreamDisplay {
       this.mode = "idle";
     }
 
-    // Flush remaining if full tag matched and we're back in idle
     if (this.mode === "idle" && this.buffer.length > 0) {
       const next = this._nextTag();
-      if (!next) this.buffer = ""; // junk between blocks, discard
+      if (!next) this.buffer = "";
     }
 
-    return output.join("");
+    const full = output.join("");
+    const delta = full.slice(this._lastLen);
+    this._lastLen = full.length;
+    return delta;
   }
 
   private _nextTag(): string | null {
