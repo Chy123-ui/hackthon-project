@@ -770,12 +770,45 @@ button.danger:hover {
 }
 
 .state-panel-key {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
   color: var(--text-secondary);
+  font-family: var(--font-sans);
   font-size: 10px;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+}
+
+.state-panel-key:hover {
+  color: var(--accent);
+}
+
+.item-arrow {
+  display: inline-block;
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.item-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.state-panel-item.item-collapsed .state-panel-key {
+  color: var(--text-secondary);
+}
+
+.state-panel-item.item-collapsed .state-panel-key:hover {
+  color: var(--accent);
 }
 
 .state-panel-value {
@@ -783,6 +816,16 @@ button.danger:hover {
   font-size: 13px;
   line-height: 1.35;
   word-break: break-word;
+  max-height: 200px;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease;
+}
+
+.state-panel-item.item-collapsed .state-panel-value {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
 }
 
 /* ---- Confirm Dialog ---- */
