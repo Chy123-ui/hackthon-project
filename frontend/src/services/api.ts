@@ -26,6 +26,15 @@ export interface GameSession {
   world: string;
   player_name: string;
   messages: { role: string; content: string }[];
+  game_state: Record<string, unknown>;
+  turn: number;
+}
+
+export interface GameActionResponse {
+  content: string;
+  thought: string;
+  suggestions: string[];
+  state: Record<string, unknown>;
   turn: number;
 }
 
@@ -37,6 +46,8 @@ export interface Config {
   temperature?: number;
 }
 
+// ---- Config ----
+
 export async function getConfig(): Promise<Config> {
   return request<Config>("/config");
 }
@@ -45,36 +56,60 @@ export async function updateConfig(config: Config): Promise<void> {
   await request("/config", { method: "PUT", body: JSON.stringify(config) });
 }
 
-export async function listTemplates(): Promise<{ worlds: string[] }> {
+// ---- Templates: Core ----
+
+export async function getCoreProtocol(): Promise<{ protocol: string }> {
+  return request("/templates/core/protocol");
+}
+
+export async function getCoreSafety(): Promise<{ rules: string }> {
+  return request("/templates/core/safety");
+}
+
+// ---- Templates: World ----
+
+export async function listWorlds(): Promise<{ worlds: string[] }> {
   return request("/templates");
 }
 
-export async function getUserTemplate(world: string): Promise<Record<string, unknown>> {
-  return request(`/templates/${world}/user`);
+export async function getWorldTemplate(world: string): Promise<Record<string, unknown>> {
+  return request(`/templates/${world}/world`);
 }
 
-export async function updateUserTemplate(
-  world: string,
-  data: Record<string, unknown>
-): Promise<void> {
-  await request(`/templates/${world}/user`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+export async function updateWorldTemplate(world: string, data: Record<string, unknown>): Promise<void> {
+  await request(`/templates/${world}/world`, { method: "PUT", body: JSON.stringify(data) });
 }
 
-export async function getCoreTemplate(world: string): Promise<Record<string, unknown>> {
-  return request(`/templates/${world}/core`);
+export async function getPlayerTemplate(world: string): Promise<Record<string, unknown>> {
+  return request(`/templates/${world}/player`);
+}
+
+export async function updatePlayerTemplate(world: string, data: Record<string, unknown>): Promise<void> {
+  await request(`/templates/${world}/player`, { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function getPreferencesTemplate(world: string): Promise<Record<string, unknown>> {
+  return request(`/templates/${world}/preferences`);
+}
+
+export async function updatePreferencesTemplate(world: string, data: Record<string, unknown>): Promise<void> {
+  await request(`/templates/${world}/preferences`, { method: "PUT", body: JSON.stringify(data) });
 }
 
 export async function previewTemplate(world: string): Promise<{ preview: string }> {
   return request(`/templates/${world}/preview`);
 }
 
-export async function newGame(
-  world: string,
-  player_name: string
-): Promise<{ game_id: string }> {
+export async function generateWorld(concept: string): Promise<{ world: string; files: string[] }> {
+  return request("/templates/new", {
+    method: "POST",
+    body: JSON.stringify({ concept }),
+  });
+}
+
+// ---- Game ----
+
+export async function newGame(world: string, player_name: string): Promise<{ game_id: string }> {
   return request("/game/new", {
     method: "POST",
     body: JSON.stringify({ world, player_name }),
@@ -92,7 +127,7 @@ export async function getGameHistory(gameId: string): Promise<GameSession> {
 export async function sendAction(
   gameId: string,
   action: string
-): Promise<{ content: string; turn: number }> {
+): Promise<GameActionResponse> {
   return request(`/game/${gameId}/action`, {
     method: "POST",
     body: JSON.stringify({ action }),
@@ -103,6 +138,7 @@ export async function sendActionStream(
   gameId: string,
   action: string,
   onChunk: (text: string) => void,
+  onParsed: (suggestions: string[], state: Record<string, unknown>) => void,
   onDone: () => void,
   onError: (err: string) => void
 ): Promise<void> {
@@ -134,7 +170,12 @@ export async function sendActionStream(
               onError(json.error);
               return;
             }
-            if (json.content) onChunk(json.content);
+            if (json.content) {
+              onChunk(json.content);
+            }
+            if (json.parsed) {
+              onParsed(json.parsed.suggestions || [], json.parsed.state || {});
+            }
           } catch {
             // skip malformed
           }

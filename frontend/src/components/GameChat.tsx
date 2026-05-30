@@ -13,6 +13,8 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [streamingText, setStreamingText] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [gameState, setGameState] = useState<Record<string, unknown>>({});
   const [error, setError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -29,6 +31,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     try {
       const data = await getGameHistory(gameId);
       setSession(data);
+      setGameState(data.game_state || {});
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -40,23 +43,23 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     setInput("");
     setLoading(true);
     setStreamingText("");
+    setSuggestions([]);
     setError("");
 
     const userMsg = { role: "user", content: action };
     setSession((prev) =>
       prev
-        ? {
-            ...prev,
-            messages: [...prev.messages, userMsg],
-          }
+        ? { ...prev, messages: [...prev.messages, userMsg] }
         : prev
     );
 
     await sendActionStream(
       gameId,
       action,
-      (chunk) => {
-        setStreamingText((prev) => prev + chunk);
+      (chunk) => setStreamingText((prev) => prev + chunk),
+      (newSuggestions, newState) => {
+        setSuggestions(newSuggestions);
+        setGameState(newState);
       },
       () => {
         setStreamingText("");
@@ -78,6 +81,11 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     }
   }
 
+  function displayContent(raw: string): string {
+    const match = raw.match(/<narrate>([\s\S]*?)<\/narrate>/);
+    return match ? match[1].trim() : raw;
+  }
+
   return (
     <div className="chat-view">
       <div className="chat-header">
@@ -92,28 +100,108 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         </button>
       </div>
 
-      <div className="chat-messages">
-        {session?.messages.map((msg, i) => (
-          <div key={i} className={`message ${msg.role}`}>
-            <div className="role-label">
-              {msg.role === "user" ? playerName : "GM"}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <div className="chat-messages" style={{ flex: 1 }}>
+          {session?.messages.map((msg, i) => (
+            <div key={i} className={`message ${msg.role}`}>
+              <div className="role-label">
+                {msg.role === "user" ? playerName : "GM"}
+              </div>
+              {displayContent(msg.content)}
             </div>
-            {msg.content}
-          </div>
-        ))}
-        {streamingText && (
-          <div className="message assistant">
-            <div className="role-label">GM</div>
-            {streamingText}
+          ))}
+          {streamingText && (
+            <div className="message assistant">
+              <div className="role-label">GM</div>
+              {streamingText
+                .replace(/<thought>[\s\S]*?<\/thought>/g, "")
+                .replace(/<state>[\s\S]*?<\/state>/g, "")
+                .replace(/<suggestions>[\s\S]*?<\/suggestions>/g, "")
+                .replace(/<\/?narrate>/g, "")
+                .trim()}
+            </div>
+          )}
+          {loading && !streamingText && (
+            <div className="message assistant">
+              <div className="role-label">GM</div>
+              Generating...
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {(suggestions.length > 0 || Object.keys(gameState).length > 0) && (
+          <div
+            style={{
+              width: 240,
+              padding: 12,
+              background: "var(--bg-secondary)",
+              borderLeft: "1px solid var(--border)",
+              overflowY: "auto",
+              fontSize: 13,
+            }}
+          >
+            {suggestions.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <h4 style={{ color: "var(--accent)", marginBottom: 8 }}>
+                  Suggested Actions
+                </h4>
+                {suggestions.map((s, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setInput(s)}
+                    style={{
+                      padding: "6px 8px",
+                      marginBottom: 4,
+                      background: "var(--bg-card)",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      color: "var(--text)",
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    {s}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {Object.keys(gameState).length > 0 && (
+              <div>
+                <h4
+                  style={{
+                    color: "var(--text-secondary)",
+                    marginBottom: 8,
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Game State
+                </h4>
+                {Object.entries(gameState).map(([key, value]) => (
+                  <div
+                    key={key}
+                    style={{
+                      marginBottom: 4,
+                      padding: "4px 8px",
+                      background: "var(--bg-card)",
+                      borderRadius: 4,
+                      fontSize: 12,
+                    }}
+                  >
+                    <span style={{ color: "var(--text-secondary)" }}>
+                      {key}:{" "}
+                    </span>
+                    <span style={{ color: "var(--text)" }}>
+                      {Array.isArray(value) ? value.join(", ") : String(value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
-        {loading && !streamingText && (
-          <div className="message assistant">
-            <div className="role-label">GM</div>
-            Generating...
-          </div>
-        )}
-        <div ref={messagesEndRef} />
       </div>
 
       {error && (
@@ -133,9 +221,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         <input
           ref={inputRef}
           type="text"
-          placeholder={
-            loading ? "Waiting for GM..." : "What do you do?"
-          }
+          placeholder={loading ? "Waiting for GM..." : "What do you do?"}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}

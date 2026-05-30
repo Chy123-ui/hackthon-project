@@ -23,6 +23,7 @@ class SessionManager:
             "world": world,
             "player_name": player_name,
             "messages": [],
+            "game_state": {},
             "turn": 0,
             "created_at": now,
             "updated_at": now,

@@ -4,7 +4,7 @@ import {
   listGames,
   newGame,
   deleteGame,
-  listTemplates,
+  listWorlds,
 } from "../services/api";
 import GameChat from "./GameChat";
 
@@ -29,7 +29,7 @@ export default function GameView(_props: Props) {
     try {
       const [games, tmpl] = await Promise.all([
         listGames(),
-        listTemplates(),
+        listWorlds(),
       ]);
       setSessions(games);
       setWorlds(tmpl.worlds);
