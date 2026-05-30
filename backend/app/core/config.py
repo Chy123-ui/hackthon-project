@@ -4,8 +4,8 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     api_key: str = ""
-    base_url: str = "https://api.deepseek.com/v1"
-    model: str = "deepseek-chat"
+    base_url: str = "https://api.openai.com/v1"
+    model: str = "gpt-4o"
     max_tokens: int = 4096
     temperature: float = 0.8
     data_dir: Path = Path(__file__).parent.parent.parent / "data"

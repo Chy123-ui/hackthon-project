@@ -6,6 +6,7 @@ from ..core.config import settings
 from ..core.prompt_engine import PromptEngine
 from ..core.llm_client import LLMClient
 from ..core.session import SessionManager
+from ..core.encrypt_config import encrypt_api_key, decrypt_config
 from ..models.game import (
     NewGameRequest,
     NewGameResponse,
@@ -24,13 +25,13 @@ CONFIG_PATH = settings.data_dir / "config.json"
 def _load_server_config() -> dict:
     if CONFIG_PATH.exists():
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+            return decrypt_config(json.load(f))
     return {}
 
 
 def _save_server_config(config: dict) -> None:
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(config, f, ensure_ascii=False, indent=2)
+        json.dump(encrypt_api_key(config), f, ensure_ascii=False, indent=2)
 
 
 def _apply_config(config: dict) -> None:
