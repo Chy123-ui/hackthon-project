@@ -11,7 +11,7 @@ type Phase = "entering" | "idle" | "leaving";
 
 export default function SuggestionBar({
   suggestions,
-  loading,
+  loading: _loading,
   onClick,
   onSend,
 }: Props) {

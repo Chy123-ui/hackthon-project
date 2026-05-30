@@ -26,7 +26,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [gameState, setGameState] = useState<Record<string, unknown>>({});
   const [error, setError] = useState("");
   const [tokens, setTokens] = useState<{ used: number; budget: number; percent: number } | null>(null);
-  const { displayText: typewriterText, isComplete: typewriterComplete } = useTypewriter({
+  const { displayText: typewriterText } = useTypewriter({
     text: displayStream,
     isActive: loading,
   });
@@ -43,7 +43,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   }, [session?.messages, streamingText, typewriterText]);
 
   useEffect(() => {
-    const shouldFinalize = streamComplete && (typewriterComplete || displayStream.length === 0);
+    const shouldFinalize = streamComplete;
     if (!shouldFinalize || finalizingRef.current) return;
 
     finalizingRef.current = true;
@@ -54,7 +54,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
       setLoading(false);
       finalizingRef.current = false;
     });
-  }, [displayStream.length, streamComplete, typewriterComplete]);
+  }, [displayStream.length, streamComplete]);
 
   async function loadSession(withMeta = false) {
     try {
@@ -152,19 +152,19 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
               playerName={playerName}
             />
           ))}
-          {typewriterText && (
+          {loading && displayStream && (
             <div className="message assistant">
               <div className="role-label">GM</div>
               <div className="assistant-content">
                 <ThoughtPlaceholder />
                 <div className="narrate-block streaming">
-                  {typewriterText}
+                  {displayStream}
                   <span className="typing-cursor" />
                 </div>
               </div>
             </div>
           )}
-          {loading && !typewriterText && (
+          {loading && !displayStream && (
             <div className="message assistant">
               <div className="role-label">GM</div>
               Generating...
