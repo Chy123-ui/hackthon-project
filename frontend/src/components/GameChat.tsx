@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { GameSession } from "../services/api";
-import { getGameHistory, sendActionStream } from "../services/api";
+import { getGameHistory, sendActionStream, getGameTokens } from "../services/api";
 import { StreamDisplay } from "../hooks/useGameStream";
 import ChatMessage from "./ChatMessage";
 import StatePanel from "./StatePanel";
@@ -24,6 +24,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [gameState, setGameState] = useState<Record<string, unknown>>({});
   const [error, setError] = useState("");
+  const [tokens, setTokens] = useState<{ used: number; budget: number; percent: number } | null>(null);
   const { displayText: typewriterText, isComplete: typewriterComplete } = useTypewriter({
     text: displayStream,
     isActive: loading,
@@ -61,6 +62,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         setGameState(data.game_state || {});
         setSuggestions(data.suggestions || []);
       }
+      getGameTokens(gameId).then(setTokens).catch(() => {});
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -114,6 +116,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   return (
     <div className="chat-view">
       <ChatHeader
+        tokens={tokens}
         world={session?.world}
         playerName={playerName}
         turn={session?.turn ?? 0}
@@ -188,11 +191,13 @@ function ChatHeader({
   world,
   playerName,
   turn,
+  tokens,
   onBack,
 }: {
   world?: string;
   playerName: string;
   turn: number;
+  tokens: { used: number; budget: number; percent: number } | null;
   onBack: () => void;
 }) {
   return (
@@ -202,6 +207,21 @@ function ChatHeader({
           {world ?? "..."} - {playerName}
         </h2>
         <span className="subtitle">Turn {turn}</span>
+        {tokens && (
+          <span
+            className="subtitle"
+            style={{
+              color:
+                tokens.percent > 80
+                  ? "var(--danger)"
+                  : tokens.percent > 50
+                  ? "#e2b96f"
+                  : "var(--text-secondary)",
+            }}
+          >
+            | Tokens: {tokens.used}/{tokens.budget}
+          </span>
+        )}
       </div>
       <button className="secondary" onClick={onBack}>
         Back to Sessions

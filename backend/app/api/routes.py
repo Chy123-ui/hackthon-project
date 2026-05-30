@@ -472,3 +472,22 @@ async def delete_game(game_id: str):
 @router.get("/games")
 async def list_games():
     return session_manager.list_sessions()
+
+
+@router.get("/game/{game_id}/tokens")
+async def game_tokens(game_id: str):
+    session = session_manager.load(game_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    system_prompt = prompt_engine.render_system_prompt(
+        session["world"], session["player_name"], session.get("game_state", {})
+    )
+
+    msgs = assemble_messages(session, system_prompt, settings.model_max_tokens)
+    used = count_messages(msgs)
+    return {
+        "used": used,
+        "budget": settings.model_max_tokens,
+        "percent": round(used / max(settings.model_max_tokens, 1) * 100, 1),
+    }
