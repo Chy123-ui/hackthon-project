@@ -112,11 +112,11 @@ export default function HistoryView({ searchQuery = "" }: Props) {
           border: "1px solid var(--accent)", borderRadius: "var(--radius)",
         }}>
           <span style={{ fontSize: 13, color: "var(--accent)" }}>
-            {selected.size} selected
+            {selected.size} 已选
           </span>
           <div style={{ flex: 1 }} />
           <button className="danger" onClick={handleBulkDelete} style={{ fontSize: 13 }}>
-            Delete Selected
+            删除已选
           </button>
         </div>
       )}

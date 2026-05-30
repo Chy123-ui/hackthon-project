@@ -42,17 +42,21 @@ export default function SessionList({ sessions, onOpen, onDelete, multiSelect, s
                 style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--accent)" }}
               />
             )}
-            <div onClick={() => onOpen(s)} style={{ flex: 1, cursor: "pointer" }}>
+            <div
+              onClick={() => { multiSelect && onSelectToggle ? onSelectToggle(s.id) : onOpen(s); }}
+              style={{ flex: 1, cursor: "pointer" }}>
               <h3>
                 {s.player_name} - {s.world}
               </h3>
               <p>
-                Turn {s.turn} | Updated: {new Date(s.updated_at).toLocaleString()}
+                第 {s.turn} 回合 | {new Date(s.updated_at).toLocaleString()}
               </p>
             </div>
-            <button className="danger" onClick={(e) => onDelete(s.id, e)}>
-              Delete
-            </button>
+            {!multiSelect && (
+              <button className="danger" onClick={(e) => onDelete(s.id, e)}>
+                删除
+              </button>
+            )}
           </div>
         </div>
       ))}

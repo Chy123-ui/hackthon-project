@@ -52,18 +52,18 @@ export default function TemplateList({
           border: "1px solid var(--accent)", borderRadius: "var(--radius)",
         }}>
           <span style={{ fontSize: 13, color: "var(--accent)" }}>
-            {selectedCount} selected
+            {selectedCount} 已选
           </span>
           <div style={{ flex: 1 }} />
           <button className="danger" onClick={onBulkDelete} style={{ fontSize: 13 }}>
-            Delete Selected
+            删除已选
           </button>
         </div>
       )}
 
       {worlds.length === 0 && (
         <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-          No worlds yet. Create or import one.
+          还没有世界。创建或导入一个。
         </p>
       )}
 
@@ -92,7 +92,9 @@ export default function TemplateList({
                   style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--accent)" }}
                 />
               )}
-              <div onClick={() => onSelect(w)} style={{ flex: 1, cursor: "pointer" }}>
+              <div
+                onClick={() => { multiSelect && onSelectToggle ? onSelectToggle(w) : onSelect(w); }}
+                style={{ flex: 1, cursor: "pointer" }}>
                 <h3 style={{ fontSize: 16, color: "var(--text)", marginBottom: 4 }}>
                   {w}
                 </h3>
@@ -107,15 +109,17 @@ export default function TemplateList({
                 onClick={(e) => { e.stopPropagation(); onExport(w); }}
                 style={{ fontSize: 12, padding: "4px 12px" }}
               >
-                Export
+                导出
               </button>
-              <button
-                className="danger"
-                onClick={(e) => { e.stopPropagation(); onDelete(w); }}
-                style={{ fontSize: 12, padding: "4px 12px" }}
-              >
-                Delete
-              </button>
+              {!multiSelect && (
+                <button
+                  className="danger"
+                  onClick={(e) => { e.stopPropagation(); onDelete(w); }}
+                  style={{ fontSize: 12, padding: "4px 12px" }}
+                >
+                  删除
+                </button>
+              )}
             </div>
           </div>
         ))}
