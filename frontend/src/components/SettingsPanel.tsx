@@ -6,9 +6,15 @@ export default function SettingsPanel() {
   const [config, setConfig] = useState<Config>({});
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getConfig().then(setConfig).catch(console.error);
+    getConfig()
+      .then(setConfig)
+      .catch((e: unknown) => {
+        setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleSave() {
@@ -27,6 +33,22 @@ export default function SettingsPanel() {
   return (
     <div className="settings-view">
       <h2>Settings</h2>
+
+      {loading && (
+        <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Loading...</p>
+      )}
+
+      {status.startsWith("error") && (
+        <div style={{
+          padding: "8px 12px", marginBottom: 16,
+          background: "rgba(212,90,90,0.1)",
+          border: "1px solid var(--danger)",
+          borderRadius: "var(--radius)",
+          color: "var(--danger)", fontSize: 13,
+        }}>
+          {status}
+        </div>
+      )}
 
       <div className="form-group">
         <label>API Key</label>
@@ -91,9 +113,6 @@ export default function SettingsPanel() {
         </button>
         {status === "saved" && (
           <span className="status-badge saved">Saved</span>
-        )}
-        {status.startsWith("error") && (
-          <span className="status-badge error">{status}</span>
         )}
       </div>
     </div>
