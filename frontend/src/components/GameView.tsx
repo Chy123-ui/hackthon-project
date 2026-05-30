@@ -16,7 +16,7 @@ export default function GameView() {
   const [sessions, setSessions] = useState<GameListItem[]>([]);
   const [worlds, setWorlds] = useState<string[]>([]);
   const [playerName, setPlayerName] = useState("");
-  const [placeholderName, setPlaceholderName] = useState("冒险者");
+  const [placeholderName, setPlaceholderName] = useState("");
   const [selectedWorld, setSelectedWorld] = useState("fantasy");
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [activePlayerName, setActivePlayerName] = useState("");
