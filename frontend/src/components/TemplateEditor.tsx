@@ -3,7 +3,7 @@ import {
   listWorlds, getWorldTemplate, updateWorldTemplate,
   getPlayerTemplate, updatePlayerTemplate, getPreferencesTemplate,
   updatePreferencesTemplate, previewTemplate,
-  exportWorld, importWorld, deleteWorld, generateWorld, getModifySuggestions,
+  exportWorld, importWorld, deleteWorld, modifyWorld, getModifySuggestions,
 } from "../services/api";
 import NewWorldDialog from "./NewWorldDialog";
 import WorldFileEditor from "./WorldFileEditor";
@@ -106,9 +106,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
     setAiModifying(true);
     setStatus("AI is modifying...");
     try {
-      const oldContent = fileMap[activeFile].data;
-      const concept = `Modify ${selectedWorld} world template. Current content: ${oldContent}. Instruction: ${instr}. Return ONLY the updated YAML in same format.`;
-      const result = await generateWorld(concept);
+      const result = await modifyWorld(selectedWorld, instr);
       setAiHistory((prev) => [...prev.slice(-9), instr]);
       await loadAll();
       openEditor(result.world);

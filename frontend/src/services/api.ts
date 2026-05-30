@@ -89,6 +89,10 @@ export async function getModifySuggestions(world: string): Promise<{ suggestions
   return request(`/templates/${world}/modify-suggestions`);
 }
 
+export async function modifyWorld(world: string, instruction: string): Promise<{ world: string; files: string[] }> {
+  return request(`/templates/${world}/modify`, { method: "POST", body: JSON.stringify({ instruction }) });
+}
+
 export async function getPlayerTemplate(world: string): Promise<Record<string, unknown>> {
   return request(`/templates/${world}/player`);
 }

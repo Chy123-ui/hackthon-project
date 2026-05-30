@@ -218,6 +218,75 @@ detail_level: 细节程度
 {content}"""
 
 
+MODIFY_PROMPT = """你是一个游戏世界观编辑助手。下面是当前游戏世界的模板文件。
+用户有一项修改需求，请根据需求修改模板并在新的世界名中体现修改。
+返回修改后完整的三个 YAML 块（和生成世界一样的格式）。
+
+修改需求：{instruction}
+
+当前世界名：{world_name}
+
+```yaml
+# world.yaml
+{world_content}
+```
+
+```yaml
+# player.yaml
+{player_content}
+```
+
+```yaml
+# preferences.yaml
+{prefs_content}
+```
+
+请直接输出修改后的完整 YAML，不要加任何解释。"""
+
+
+@router.post("/templates/{world}/modify")
+async def modify_world(world: str, body: dict):
+    instruction = body.get("instruction", "").strip()
+    if not instruction:
+        raise HTTPException(status_code=400, detail="Instruction required")
+
+    world_data = prompt_engine.load_world(world)
+    if world_data is None:
+        raise HTTPException(status_code=404, detail=f"World '{world}' not found")
+    player_data = prompt_engine.load_player(world) or {}
+    prefs_data = prompt_engine.load_preferences(world) or {}
+
+    world_yaml = yaml.dump(world_data, allow_unicode=True)
+    player_yaml = yaml.dump(player_data, allow_unicode=True)
+    prefs_yaml = yaml.dump(prefs_data, allow_unicode=True)
+
+    prompt = MODIFY_PROMPT.format(
+        instruction=instruction,
+        world_name=world_data.get("name", world),
+        world_content=world_yaml,
+        player_content=player_yaml,
+        prefs_content=prefs_yaml,
+    )
+
+    try:
+        result = await llm_client.chat([{"role": "user", "content": prompt}])
+        raw = result["choices"][0]["message"]["content"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
+
+    world_name, files = _parse_world_gen(raw, f"modified_{world}")
+    if world_name is None:
+        raise HTTPException(status_code=500, detail="Failed to parse modified output")
+
+    for filename, content in files.items():
+        path = settings.worlds_dir / world_name / filename
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    return {"world": world_name, "files": list(files.keys())}
+
+
 @router.get("/templates/{world}/modify-suggestions")
 async def get_modify_suggestions(world: str):
     world_data = prompt_engine.load_world(world)
