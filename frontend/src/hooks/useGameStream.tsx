@@ -39,21 +39,19 @@ export class StreamDisplay {
         }
         this.mode = tag as typeof this.mode;
         this.buffer = this.buffer.slice(this.buffer.indexOf(`<${tag}>`) + tag.length + 2);
+        if (tag === "narrate") this.buffer = this.buffer.replace(/^\n+/, "");
         continue;
       }
 
       const closeTag = `</${this.mode}>`;
       const idx = this.buffer.indexOf(closeTag);
       if (idx === -1) {
-        const pendingClose = this._pendingCloseLength(this.buffer, closeTag);
-        const emitText = this.buffer.slice(0, this.buffer.length - pendingClose);
-        if (this.mode === "narrate") output.push(emitText);
-        this.buffer = this.buffer.slice(this.buffer.length - pendingClose);
+        if (this.mode === "narrate") output.push(this.buffer);
         break;
       }
 
       if (this.mode === "narrate") output.push(this.buffer.slice(0, idx));
-      this.buffer = this.buffer.slice(idx + closeTag.length);
+      this.buffer = this.buffer.slice(idx + closeTag.length).replace(/^\n+/, "");
       this.mode = "idle";
     }
 
@@ -79,16 +77,6 @@ export class StreamDisplay {
       }
     }
     return "";
-  }
-
-  private _pendingCloseLength(text: string, closeTag: string): number {
-    const max = Math.min(text.length, closeTag.length - 1);
-    for (let len = max; len > 0; len -= 1) {
-      if (closeTag.startsWith(text.slice(text.length - len))) {
-        return len;
-      }
-    }
-    return 0;
   }
 }
 
