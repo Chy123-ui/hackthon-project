@@ -12,46 +12,25 @@ export default function StatePanel({ gameState }: Props) {
 
   useLayoutEffect(() => {
     const nextLongKeys = new Set<string>();
-
     for (const key of Object.keys(gameState)) {
       const el = valueRefs.current.get(key);
       if (!el) continue;
-
       const lineHeight = parseFloat(window.getComputedStyle(el).lineHeight);
       const threshold = lineHeight * 5;
-      if (el.scrollHeight > threshold) {
-        nextLongKeys.add(key);
-      }
+      if (el.scrollHeight > threshold) nextLongKeys.add(key);
     }
-
     setCollapsedKeys(new Set(nextLongKeys));
   }, [gameState]);
 
   function toggleItem(key: string) {
-    setCollapsedKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
+    setCollapsedKeys((prev) => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; });
   }
 
-  if (stateCount === 0) {
-    return null;
-  }
+  if (stateCount === 0) return null;
 
   return (
     <div className={`state-panel${collapsed ? " collapsed" : ""}`}>
-      <button
-        className="state-panel-toggle"
-        type="button"
-        onClick={() => setCollapsed((v) => !v)}
-        aria-label={collapsed ? "展开游戏状态" : "收起游戏状态"}
-        title={collapsed ? "展开游戏状态" : "收起游戏状态"}
-      >
+      <button className="state-panel-toggle" type="button" onClick={() => setCollapsed((v) => !v)} aria-label={collapsed ? "展开游戏状态" : "收起游戏状态"} title={collapsed ? "展开游戏状态" : "收起游戏状态"}>
         {collapsed ? "<" : ">"}
       </button>
       {collapsed && <span className="state-panel-rail-count">{stateCount}</span>}
@@ -61,12 +40,8 @@ export default function StatePanel({ gameState }: Props) {
           <span className="state-panel-count">{stateCount}</span>
         </div>
         {Object.entries(gameState).map(([key, value]) => {
-          let displayKey = key;
-          let displayValue: string;
-          if (value && typeof value === "object" && "label" in (value as Record<string, unknown>)) {
-            displayKey = (value as Record<string, unknown>).label as string;
-            displayValue = String((value as Record<string, unknown>).value);
-          } else if (Array.isArray(value)) {
+          let displayValue = "";
+          if (Array.isArray(value)) {
             displayValue = value.map((v: unknown) => {
               if (v && typeof v === "object" && "label" in (v as Record<string, unknown>)) {
                 return (v as Record<string, unknown>).label;
@@ -77,29 +52,13 @@ export default function StatePanel({ gameState }: Props) {
             displayValue = String(value).replace(/<[^>]*>/g, "").trim();
           }
           const isCollapsed = collapsedKeys.has(key);
-
           return (
-            <div
-              key={key}
-              className={`state-panel-item${isCollapsed ? " item-collapsed" : ""}`}
-            >
-              <button
-                className="state-panel-key"
-                type="button"
-                onClick={() => toggleItem(key)}
-              >
-                <span className={`item-arrow${isCollapsed ? "" : " expanded"}`}>
-                  &gt;
-                </span>
-                {displayKey}
+            <div key={key} className={`state-panel-item${isCollapsed ? " item-collapsed" : ""}`}>
+              <button className="state-panel-key" type="button" onClick={() => toggleItem(key)}>
+                <span className={`item-arrow${isCollapsed ? "" : " expanded"}`}>&gt;</span>
+                {key}
               </button>
-              <span
-                ref={(el) => {
-                  if (el) valueRefs.current.set(key, el);
-                  else valueRefs.current.delete(key);
-                }}
-                className="state-panel-value"
-              >
+              <span ref={(el) => { if (el) valueRefs.current.set(key, el); else valueRefs.current.delete(key); }} className="state-panel-value">
                 {displayValue}
               </span>
             </div>
