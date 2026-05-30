@@ -39,6 +39,7 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
     { key: "base_url", label: "Base URL", type: "text", placeholder: "https://api.openai.com/v1" },
     { key: "model", label: "Model", type: "text", placeholder: "gpt-4o" },
     { key: "max_tokens", label: "Max Tokens", type: "number", placeholder: "4096" },
+    { key: "gen_max_tokens", label: "Gen Max Tokens", type: "number", placeholder: "16384" },
     { key: "temperature", label: "Temperature", type: "number", placeholder: "0.8" },
   ];
 
@@ -89,7 +90,8 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
             value={String(config[f.key] ?? "")}
             onChange={(e) => {
               const v = e.target.value;
-              setConfig({ ...config, [f.key]: f.key === "max_tokens" || f.key === "temperature" ? (v ? Number(v) : undefined) : v });
+              const numKeys = ["max_tokens", "gen_max_tokens", "temperature"];
+              setConfig({ ...config, [f.key]: numKeys.includes(f.key) ? (v ? Number(v) : undefined) : v });
             }}
           />
         </div>
