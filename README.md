@@ -43,3 +43,21 @@ build.bat    # 输出到 build/re-life/
 首次启动后在 Settings 页面填写 API Key、Base URL、Model 即可开始游戏。
 
 支持 OpenAI / DeepSeek / Groq 等兼容 API。
+
+## 常见问题
+
+### pip 下载太慢？
+
+使用清华镜像：
+
+```bash
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+### 需要代理访问 API？
+
+```bash
+set HTTP_PROXY=http://127.0.0.1:7890
+set HTTPS_PROXY=http://127.0.0.1:7890
+start.bat
+```
