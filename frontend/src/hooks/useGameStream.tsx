@@ -18,8 +18,12 @@ export function stripTags(raw: string): string {
 export function displayNarrate(raw: string): string {
   const open = /<narrate\s*>/i.exec(raw);
   if (!open) {
-    const cleaned = raw.replace(/<[^>]*>/g, "").trim();
-    return cleaned || raw;
+    const stopAt = raw.search(/<\/(?:narrate|state|suggestions)\s*>/i);
+    const text = stopAt !== -1 ? raw.slice(0, stopAt) : raw;
+    const cleaned = text.replace(/<[^>]*>/g, "").trim();
+    if (cleaned) return cleaned;
+    const cleanedAll = raw.replace(/<[^>]*>/g, "").trim();
+    return cleanedAll || raw;
   }
   const start = open.index + open[0].length;
   const close = /<\/narrate\s*>/i.exec(raw.slice(start));
