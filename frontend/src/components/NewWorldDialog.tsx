@@ -100,7 +100,7 @@ export default function NewWorldDialog({ onCreated, onError, onClose }: Props) {
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) { setImportFile(file); handleImport(); }
+    if (file) { setImportFile(file); }
   }
 
   return (
@@ -174,6 +174,11 @@ export default function NewWorldDialog({ onCreated, onError, onClose }: Props) {
           >
             {generating ? "导入中..." : "选择文件"}
           </button>
+          {importFile && !generating && (
+            <button className="primary" onClick={handleImport} style={{ marginLeft: 8 }}>
+              提交
+            </button>
+          )}
           {importFile && (
             <span style={{ marginLeft: 8, color: "var(--text-secondary)", fontSize: 13 }}>
               {importFile.name}
