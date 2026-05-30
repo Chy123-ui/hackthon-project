@@ -144,7 +144,7 @@ export default function HistoryView({ searchQuery = "" }: Props) {
 
       {visibleSessions.length === 0 && (
         <p style={{ color: "var(--text-secondary)", fontSize: 14, textAlign: "center", padding: 40 }}>
-          No stories found.
+          没有找到故事。
         </p>
       )}
     </div>
