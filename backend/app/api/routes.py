@@ -435,14 +435,8 @@ async def game_action_stream(game_id: str, body: GameAction):
             if full_reply:
                 truncated = "</narrate>" not in full_reply
                 tape_tag = "truncated" if truncated else "normal"
-                content = full_reply
-                if truncated:
-                    import re
-                    content = re.sub(r"<narrate>[\s\S]*$", "", full_reply).strip()
-                    if not content.strip():
-                        content = "[interrupted]"
                 session["messages"].append({"role": "user", "content": body.action, "tape": "normal"})
-                session["messages"].append({"role": "assistant", "content": content, "tape": tape_tag})
+                session["messages"].append({"role": "assistant", "content": full_reply, "tape": tape_tag})
                 session["turn"] += 1
                 parsed = _build_and_tag(session, full_reply)
                 if parsed["state_updates"]:

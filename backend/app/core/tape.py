@@ -50,7 +50,7 @@ def assemble_messages(
         if last_was_truncated and m.get("role") == "user":
             note = {
                 "role": "assistant",
-                "content": "[The previous response was interrupted. Continue the scene naturally as the GM.]",
+                "content": "[The player stopped the previous response. Do NOT repeat or complete the last sentence. Respond to the player's new action naturally as the GM.]",
             }
             est = 4 + len(note["content"]) // 4
             if used + est <= budget:
