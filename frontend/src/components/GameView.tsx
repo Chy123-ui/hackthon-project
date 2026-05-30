@@ -17,7 +17,7 @@ export default function GameView() {
   const [worlds, setWorlds] = useState<string[]>([]);
   const [playerName, setPlayerName] = useState("");
   const [placeholderName, setPlaceholderName] = useState("");
-  const [selectedWorld, setSelectedWorld] = useState("fantasy");
+  const [selectedWorld, setSelectedWorld] = useState("");
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [activePlayerName, setActivePlayerName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,6 +53,9 @@ export default function GameView() {
       ]);
       setSessions(sortByUpdatedDesc(games));
       setWorlds(tmpl.worlds);
+      if (tmpl.worlds.length > 0 && !selectedWorld) {
+        setSelectedWorld(tmpl.worlds[0]);
+      }
       if (tmpl.worlds.length > 0) setSelectedWorld(tmpl.worlds[0]);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));

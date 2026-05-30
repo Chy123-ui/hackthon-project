@@ -24,12 +24,12 @@ class PromptEngine:
             yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 
     def _seed_defaults(self) -> None:
-        fantasy = self.worlds_dir / "fantasy"
-        if fantasy.exists():
+        """Copy fantasy default template if data/worlds is empty"""
+        if self.list_worlds():
             return
         default = Path(__file__).parent.parent.parent / "default_worlds" / "fantasy"
         if default.exists():
-            shutil.copytree(default, fantasy)
+            shutil.copytree(default, self.worlds_dir / "fantasy")
 
     def load_protocol(self) -> str:
         path = self.protocol_dir / "protocol.yaml"
