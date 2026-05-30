@@ -699,6 +699,12 @@ button.danger:hover {
   font-weight: 500;
 }
 
+.location {
+  color: #7c9fbf;
+  font-weight: 600;
+  font-size: 1.05em;
+}
+
 .action-text {
   line-height: 1.6;
 }

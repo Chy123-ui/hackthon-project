@@ -208,7 +208,7 @@ function ThoughtPlaceholder() {
   return (
     <div className="thought-block placeholder">
       <button className="thought-toggle" type="button" disabled>
-        Show thinking
+        显示思考
       </button>
     </div>
   );

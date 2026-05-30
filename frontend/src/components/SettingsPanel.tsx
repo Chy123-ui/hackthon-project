@@ -49,6 +49,17 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
     <div className="settings-view">
       <h2>设置</h2>
 
+      {!loading && !config.api_key && (
+        <div style={{
+          padding: "10px 14px", marginBottom: 16, borderRadius: "var(--radius)",
+          background: "rgba(124,92,191,0.15)",
+          border: "1px solid var(--accent)",
+          color: "var(--accent)", fontSize: 13,
+        }}>
+          请填写 API Key、Base URL 和 Model 后即可开始使用
+        </div>
+      )}
+
       {loading && (
         <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>加载中...</p>
       )}

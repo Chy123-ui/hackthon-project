@@ -7,6 +7,20 @@ from pathlib import Path
 from .config import settings
 
 
+def _build_extra(w: dict, p: dict, pref: dict) -> str:
+    """Extract extra YAML fields"""
+    known = {"name", "description", "starting_scene", "background", "narrative_style", "tone", "pacing", "detail_level"}
+    lines = []
+    for _, data in [("世界额外设定", w), ("角色额外设定", p), ("偏好额外设定", pref)]:
+        extras = {k: v for k, v in data.items() if k not in known}
+        if extras:
+            for k, v in extras.items():
+                lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
+    if lines:
+        lines.append("  以上字段在 state 中使用时，key 用英文，label 用中文展示。")
+    return "\n".join(lines) if lines else "无"
+
+
 class PromptEngine:
     def __init__(self):
         self.worlds_dir = settings.worlds_dir
@@ -96,6 +110,7 @@ class PromptEngine:
             "tone": pref.get("tone", ""),
             "pacing": pref.get("pacing", ""),
             "detail_level": pref.get("detail_level", ""),
+            "extra_context": _build_extra(w, p, pref),
         }
 
     def render_system_prompt(
@@ -141,8 +156,12 @@ class PromptEngine:
         return result
 
     def _parse_state_block(self, block: str, updates: dict) -> None:
-        for match in re.finditer(r"<set\s+key=\"([^\"]+)\">(.*?)</set>", block, re.DOTALL):
-            updates[match.group(1)] = match.group(2).strip()
+        for match in re.finditer(r"<set\s+key=\"([^\"]+)\"(?:\s+label=\"([^\"]*)\")?>(.*?)</set>", block, re.DOTALL):
+            key, label, val = match.group(1), match.group(2), match.group(3).strip()
+            if label:
+                updates[key] = {"value": val, "label": label}
+            else:
+                updates[key] = val
         for match in re.finditer(r"<add\s+key=\"([^\"]+)\"\s+value=\"([^\"]*)\"(\s+label=\"([^\"]*)\")?\s*/>", block):
             key, val, label = match.group(1), match.group(2), match.group(4)
             if key not in updates:

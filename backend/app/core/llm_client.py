@@ -24,12 +24,13 @@ class LLMClient:
         self,
         messages: list[dict],
         stream: bool = False,
+        max_tokens: int | None = None,
     ) -> dict:
         client = await self._get_client()
         payload = {
             "model": settings.model,
             "messages": messages,
-            "max_tokens": settings.max_tokens,
+            "max_tokens": max_tokens or settings.max_tokens,
             "temperature": settings.temperature,
             "stream": stream,
         }
@@ -40,13 +41,13 @@ class LLMClient:
         return response.json()
 
     async def chat_stream(
-        self, messages: list[dict]
+        self, messages: list[dict], max_tokens: int | None = None
     ) -> AsyncIterator[str]:
         client = await self._get_client()
         payload = {
             "model": settings.model,
             "messages": messages,
-            "max_tokens": settings.max_tokens,
+            "max_tokens": max_tokens or settings.max_tokens,
             "temperature": settings.temperature,
             "stream": True,
             "stream_options": {"include_usage": True},
