@@ -1,5 +1,6 @@
-"""游戏会话管理 -- 创建/保存/加载/删除会话"""
+"""游戏会话管理 -- 创建/保存/加载/删除会话, with gzip compression"""
 import json
+import gzip
 import uuid
 from pathlib import Path
 from datetime import datetime, timezone
@@ -13,7 +14,7 @@ class SessionManager:
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
 
     def _session_path(self, game_id: str) -> Path:
-        return self.sessions_dir / f"{game_id}.json"
+        return self.sessions_dir / f"{game_id}.json.gz"
 
     def create(self, world: str, player_name: str) -> str:
         game_id = uuid.uuid4().hex[:12]
@@ -29,20 +30,25 @@ class SessionManager:
             "created_at": now,
             "updated_at": now,
         }
-        with open(self._session_path(game_id), "w", encoding="utf-8") as f:
+        with gzip.open(self._session_path(game_id), "wt", encoding="utf-8") as f:
             json.dump(session, f, ensure_ascii=False, indent=2)
         return game_id
 
     def load(self, game_id: str) -> Optional[dict]:
         path = self._session_path(game_id)
         if not path.exists():
+            # fallback to old .json format
+            old = self.sessions_dir / f"{game_id}.json"
+            if old.exists():
+                with open(old, "r", encoding="utf-8") as f:
+                    return json.load(f)
             return None
-        with open(path, "r", encoding="utf-8") as f:
+        with gzip.open(path, "rt", encoding="utf-8") as f:
             return json.load(f)
 
     def save(self, game_id: str, session: dict) -> None:
         session["updated_at"] = datetime.now(timezone.utc).isoformat()
-        with open(self._session_path(game_id), "w", encoding="utf-8") as f:
+        with gzip.open(self._session_path(game_id), "wt", encoding="utf-8") as f:
             json.dump(session, f, ensure_ascii=False, indent=2, default=str)
 
     def delete(self, game_id: str) -> bool:
@@ -50,25 +56,37 @@ class SessionManager:
         if path.exists():
             path.unlink()
             return True
+        old = self.sessions_dir / f"{game_id}.json"
+        if old.exists():
+            old.unlink()
+            return True
         return False
 
     def list_sessions(self) -> list[dict]:
         sessions = []
-        for path in sorted(
-            self.sessions_dir.glob("*.json"),
-            key=lambda p: p.stat().st_mtime,
-            reverse=True,
-        ):
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                sessions.append(
-                    {
-                        "id": data["id"],
-                        "world": data["world"],
-                        "player_name": data["player_name"],
-                        "turn": data["turn"],
-                        "created_at": data.get("created_at", ""),
-                        "updated_at": data.get("updated_at", ""),
-                    }
-                )
+        for pattern in ("*.json.gz", "*.json"):
+            for path in sorted(
+                self.sessions_dir.glob(pattern),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            ):
+                try:
+                    if path.suffix == ".gz":
+                        with gzip.open(path, "rt", encoding="utf-8") as f:
+                            data = json.load(f)
+                    else:
+                        with open(path, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                    sessions.append(
+                        {
+                            "id": data["id"],
+                            "world": data["world"],
+                            "player_name": data["player_name"],
+                            "turn": data["turn"],
+                            "created_at": data.get("created_at", ""),
+                            "updated_at": data.get("updated_at", ""),
+                        }
+                    )
+                except Exception:
+                    pass
         return sessions

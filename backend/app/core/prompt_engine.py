@@ -147,6 +147,12 @@ class PromptEngine:
         if state_block:
             self._parse_state_block(state_block.group(1), result["state_updates"])
 
+        key_node = re.search(
+            r"<key-node\s+summary=\"([^\"]*)\"\s*/>", raw
+        )
+        if key_node:
+            result["key_node_summary"] = key_node.group(1)
+
         return result
 
     def _parse_state_block(self, block: str, updates: dict) -> None:
