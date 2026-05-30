@@ -218,6 +218,31 @@ detail_level: 细节程度
 {content}"""
 
 
+@router.get("/templates/{world}/modify-suggestions")
+async def get_modify_suggestions(world: str):
+    world_data = prompt_engine.load_world(world)
+    player_data = prompt_engine.load_player(world)
+    prefs_data = prompt_engine.load_preferences(world)
+    if world_data is None:
+        raise HTTPException(status_code=404, detail=f"World '{world}' not found")
+
+    summary = f"World name: {world_data.get('name', world)}\n"
+    summary += f"Description: {world_data.get('description', '')[:300]}\n"
+    summary += f"Player: {player_data.get('name', '')} - {player_data.get('background', '')[:100]}"
+    summary += f"Tone: {prefs_data.get('tone', '')}"
+
+    try:
+        result = await llm_client.chat([{
+            "role": "user",
+            "content": f"You are a creative writing assistant. Given this world template summary:\n{summary}\n\nSuggest 5 specific, diverse modification ideas for this world. Return them as a comma-separated list only, no other text."
+        }])
+        raw = result["choices"][0]["message"]["content"]
+        suggestions = [s.strip() for s in raw.split(",") if s.strip()]
+        return {"suggestions": suggestions[:5]}
+    except Exception as e:
+        return {"suggestions": []}
+
+
 def _parse_json_export(content: str) -> dict | None:
     try:
         data = json.loads(content)

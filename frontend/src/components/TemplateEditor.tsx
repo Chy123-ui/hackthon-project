@@ -3,7 +3,7 @@ import {
   listWorlds, getWorldTemplate, updateWorldTemplate,
   getPlayerTemplate, updatePlayerTemplate, getPreferencesTemplate,
   updatePreferencesTemplate, previewTemplate,
-  exportWorld, importWorld, deleteWorld, generateWorld,
+  exportWorld, importWorld, deleteWorld, generateWorld, getModifySuggestions,
 } from "../services/api";
 import NewWorldDialog, { MODIFY_EXAMPLES } from "./NewWorldDialog";
 import WorldFileEditor from "./WorldFileEditor";
@@ -27,6 +27,8 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
   const [showNewWorld, setShowNewWorld] = useState(false);
   const [showAiAssist, setShowAiAssist] = useState(false);
   const [aiInstruction, setAiInstruction] = useState("");
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [aiHistory, setAiHistory] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modifyExample = useRef(MODIFY_EXAMPLES[Math.floor(Math.random() * MODIFY_EXAMPLES.length)]);
 
@@ -104,6 +106,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
     try {
       const concept = `Modify ${selectedWorld} world template. Current content: ${fileMap[activeFile].data}. Instruction: ${instr}. Return ONLY the updated YAML in same format.`;
       const result = await generateWorld(concept);
+      setAiHistory((prev) => [...prev.slice(-9), instr]);
       await loadAll();
       openEditor(result.world);
       setStatus("AI modified successfully");
@@ -135,6 +138,18 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
             <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
               Describe what changes you want. AI will modify the current template.
             </p>
+
+            {aiSuggestions.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
+                {aiSuggestions.map((s, i) => (
+                  <span key={i} onClick={() => setAiInstruction(s)}
+                    style={{ padding: "4px 8px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 4, cursor: "pointer", fontSize: 12, color: "var(--text)" }}>
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 8 }}>
               <input
                 value={aiInstruction}
@@ -155,8 +170,17 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
                 }}
               />
               <button className="primary" onClick={handleAiAssist}>Modify</button>
-              <button className="secondary" onClick={() => { setShowAiAssist(false); setAiInstruction(""); }}>Cancel</button>
+              <button className="secondary" onClick={() => { setShowAiAssist(false); setAiInstruction(""); setAiSuggestions([]); }}>Cancel</button>
             </div>
+
+            {aiHistory.length > 0 && (
+              <div style={{ marginTop: 12, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+                <p style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 6 }}>Recent changes:</p>
+                {[...aiHistory].reverse().map((h, i) => (
+                  <div key={i} style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 4 }}>{h}</div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -166,7 +190,10 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
           activeFile={activeFile} onSelectFile={setActiveFile}
           fileData={fileMap[activeFile].data} onFileDataChange={dataSetters[activeFile]}
           preview={preview} onSave={handleSave} saving={saving} status={status}
-          onAiAssist={() => setShowAiAssist(true)}
+          onAiAssist={() => {
+            setShowAiAssist(true);
+            getModifySuggestions(selectedWorld).then((r) => setAiSuggestions(r.suggestions)).catch(() => {});
+          }}
         />
       </div>
     );
