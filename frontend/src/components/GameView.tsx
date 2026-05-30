@@ -3,6 +3,7 @@ import type { GameListItem } from "../services/api";
 import {
   listGames,
   newGame,
+  startGame,
   deleteGame,
   listWorlds,
 } from "../services/api";
@@ -20,6 +21,7 @@ export default function GameView(_props: Props) {
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   useEffect(() => {
     loadAll();
@@ -44,6 +46,7 @@ export default function GameView(_props: Props) {
       setLoading(true);
       setError("");
       const { game_id } = await newGame(selectedWorld, playerName);
+      await startGame(game_id);
       setActiveSession(game_id);
       await loadAll();
     } catch (e: unknown) {
@@ -53,13 +56,20 @@ export default function GameView(_props: Props) {
     }
   }
 
-  async function handleDelete(gameId: string, e: React.MouseEvent) {
+  function handleDelete(gameId: string, e: React.MouseEvent) {
     e.stopPropagation();
+    setDeleteTarget(gameId);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
     try {
-      await deleteGame(gameId);
+      await deleteGame(deleteTarget);
+      setDeleteTarget(null);
       await loadAll();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
+      setDeleteTarget(null);
     }
   }
 
@@ -81,6 +91,26 @@ export default function GameView(_props: Props) {
       <h2>AI Adventure</h2>
 
       {error && <div className="error-banner">{error}</div>}
+
+      {deleteTarget && (
+        <div className="confirm-overlay" onClick={() => setDeleteTarget(null)}>
+          <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete Session?</h3>
+            <p>
+              This action cannot be undone. The session and all its messages
+              will be permanently deleted.
+            </p>
+            <div className="confirm-actions">
+              <button className="secondary" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </button>
+              <button className="danger" onClick={confirmDelete}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {sessions.length > 0 && (
         <>

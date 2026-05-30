@@ -6,6 +6,7 @@ from ..core.config import settings
 from ..core.prompt_engine import PromptEngine
 from ..core.llm_client import LLMClient
 from ..core.session import SessionManager
+from ..core.encrypt_config import encrypt_api_key, decrypt_config
 from ..models.game import (
     NewGameRequest,
     NewGameResponse,
@@ -24,13 +25,13 @@ CONFIG_PATH = settings.data_dir / "config.json"
 def _load_server_config() -> dict:
     if CONFIG_PATH.exists():
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+            return decrypt_config(json.load(f))
     return {}
 
 
 def _save_server_config(config: dict) -> None:
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(config, f, ensure_ascii=False, indent=2)
+        json.dump(encrypt_api_key(config), f, ensure_ascii=False, indent=2)
 
 
 def _apply_config(config: dict) -> None:
@@ -284,6 +285,59 @@ async def new_game(body: NewGameRequest):
         world=body.world,
         player_name=body.player_name,
     )
+
+
+@router.post("/game/{game_id}/start")
+async def start_game(game_id: str):
+    session = session_manager.load(game_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if session["messages"]:
+        return {"status": "already_started"}
+
+    game_state = session.get("game_state", {})
+    system_prompt = prompt_engine.render_system_prompt(
+        session["world"], session["player_name"], game_state
+    )
+    first_scene = prompt_engine.render_first_message(
+        session["world"], session["player_name"]
+    )
+    starter = f"{system_prompt}\n\n现在开始游戏。玩家当前场景参考：{first_scene[:100]}..."
+    if "首先，请为这个场景开场" not in starter:
+        starter += "\n请以生动叙事开场，不要重复上述场景参考的原文。"
+
+    messages = [
+        {"role": "system", "content": starter},
+        {"role": "user", "content": "(游戏开始)"},
+    ]
+
+    try:
+        result = await llm_client.chat(messages)
+        raw_reply = result["choices"][0]["message"]["content"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
+
+    parsed = prompt_engine.parse_response(raw_reply)
+
+    session["messages"].append({"role": "user", "content": "(游戏开始)"})
+    session["messages"].append({"role": "assistant", "content": raw_reply})
+    session["turn"] = 1
+
+    if parsed["state_updates"]:
+        session["game_state"] = prompt_engine.apply_state_updates(
+            game_state, parsed["state_updates"]
+        )
+
+    session_manager.save(game_id, session)
+
+    return {
+        "content": parsed["narrate"] or raw_reply,
+        "thought": parsed["thought"],
+        "suggestions": parsed["suggestions"],
+        "state": session["game_state"],
+        "turn": 1,
+    }
 
 
 @router.post("/game/{game_id}/action")

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { GameSession } from "../services/api";
 import { getGameHistory, sendActionStream } from "../services/api";
+import { stripTags } from "../hooks/useGameStream";
+import ChatMessage from "./ChatMessage";
+import StatePanel from "./StatePanel";
 import { useTypewriter } from "../hooks/useTypewriter";
 
 interface Props {
@@ -22,7 +25,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     isActive: loading,
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     loadSession();
@@ -51,10 +54,9 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     setSuggestions([]);
     setError("");
 
-    const userMsg = { role: "user", content: action };
     setSession((prev) =>
       prev
-        ? { ...prev, messages: [...prev.messages, userMsg] }
+        ? { ...prev, messages: [...prev.messages, { role: "user", content: action }] }
         : prev
     );
 
@@ -83,45 +85,32 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     );
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }
-
-  function displayContent(raw: string): string {
-    const match = raw.match(/<narrate>([\s\S]*?)<\/narrate>/);
-    return match ? match[1].trim() : raw;
-  }
-
   return (
     <div className="chat-view">
-      <div className="chat-header">
-        <div>
-          <h2 style={{ display: "inline" }}>
-            {session?.world ?? "..."} - {playerName}
-          </h2>
-          <span className="subtitle">Turn {session?.turn ?? 0}</span>
-        </div>
-        <button className="secondary" onClick={onBack}>
-          Back to Sessions
-        </button>
-      </div>
+      <ChatHeader
+        world={session?.world}
+        playerName={playerName}
+        turn={session?.turn ?? 0}
+        onBack={onBack}
+      />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <div className="chat-messages" style={{ flex: 1 }}>
           {session?.messages.map((msg, i) => (
-            <div key={i} className={`message ${msg.role}`}>
-              <div className="role-label">
-                {msg.role === "user" ? playerName : "GM"}
-              </div>
-              {displayContent(msg.content)}
-            </div>
+            <ChatMessage
+              key={i}
+              role={msg.role}
+              content={msg.content}
+              playerName={playerName}
+            />
           ))}
           {typewriterText && (
             <div className="message assistant">
               <div className="role-label">GM</div>
+              <div className="narrate-block streaming">
+                {stripTags(streamingText)}
+                <span className="typing-cursor" />
+              </div>
               {typewriterText}
             </div>
           )}
@@ -134,107 +123,106 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
           <div ref={messagesEndRef} />
         </div>
 
-        {(suggestions.length > 0 || Object.keys(gameState).length > 0) && (
-          <div
-            style={{
-              width: 240,
-              padding: 12,
-              background: "var(--bg-secondary)",
-              borderLeft: "1px solid var(--border)",
-              overflowY: "auto",
-              fontSize: 13,
-            }}
-          >
-            {suggestions.length > 0 && (
-              <div style={{ marginBottom: 16 }}>
-                <h4 style={{ color: "var(--accent)", marginBottom: 8 }}>
-                  Suggested Actions
-                </h4>
-                {suggestions.map((s, i) => (
-                  <div
-                    key={i}
-                    onClick={() => setInput(s)}
-                    style={{
-                      padding: "6px 8px",
-                      marginBottom: 4,
-                      background: "var(--bg-card)",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      color: "var(--text)",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
-                    {s}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {Object.keys(gameState).length > 0 && (
-              <div>
-                <h4
-                  style={{
-                    color: "var(--text-secondary)",
-                    marginBottom: 8,
-                    fontSize: 11,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Game State
-                </h4>
-                {Object.entries(gameState).map(([key, value]) => (
-                  <div
-                    key={key}
-                    style={{
-                      marginBottom: 4,
-                      padding: "4px 8px",
-                      background: "var(--bg-card)",
-                      borderRadius: 4,
-                      fontSize: 12,
-                    }}
-                  >
-                    <span style={{ color: "var(--text-secondary)" }}>
-                      {key}:{" "}
-                    </span>
-                    <span style={{ color: "var(--text)" }}>
-                      {Array.isArray(value) ? value.join(", ") : String(value)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {error && (
-        <div
-          style={{
-            padding: "8px 16px",
-            background: "rgba(212,90,90,0.1)",
-            color: "var(--danger)",
-            fontSize: 13,
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      <div className="chat-input-area">
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder={loading ? "Waiting for GM..." : "What do you do?"}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={loading}
+        <StatePanel
+          suggestions={suggestions}
+          gameState={gameState}
+          onSuggestionClick={setInput}
         />
-        <button className="primary" onClick={handleSend} disabled={loading}>
-          Send
-        </button>
       </div>
+
+      {error && <ErrorBanner message={error} />}
+
+      <ChatInput
+        value={input}
+        onChange={setInput}
+        onSend={handleSend}
+        disabled={loading}
+        inputRef={inputRef}
+      />
+    </div>
+  );
+}
+
+/* ---- sub-components (inline, trivial) ---- */
+
+function ChatHeader({
+  world,
+  playerName,
+  turn,
+  onBack,
+}: {
+  world?: string;
+  playerName: string;
+  turn: number;
+  onBack: () => void;
+}) {
+  return (
+    <div className="chat-header">
+      <div>
+        <h2 style={{ display: "inline" }}>
+          {world ?? "..."} - {playerName}
+        </h2>
+        <span className="subtitle">Turn {turn}</span>
+      </div>
+      <button className="secondary" onClick={onBack}>
+        Back to Sessions
+      </button>
+    </div>
+  );
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div
+      style={{
+        padding: "8px 16px",
+        background: "rgba(212,90,90,0.1)",
+        color: "var(--danger)",
+        fontSize: 13,
+      }}
+    >
+      {message}
+    </div>
+  );
+}
+
+function ChatInput({
+  value,
+  onChange,
+  onSend,
+  disabled,
+  inputRef,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSend: () => void;
+  disabled: boolean;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
+}) {
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSend();
+    }
+  }
+
+  return (
+    <div className="chat-input-area">
+      <textarea
+        ref={inputRef}
+        placeholder={
+          disabled
+            ? "Waiting for GM..."
+            : "What do you do? (Enter to send, Shift+Enter for newline)"
+        }
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        disabled={disabled}
+      />
+      <button className="primary" onClick={onSend} disabled={disabled}>
+        Send
+      </button>
     </div>
   );
 }

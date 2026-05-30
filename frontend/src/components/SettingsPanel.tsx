@@ -6,9 +6,15 @@ export default function SettingsPanel() {
   const [config, setConfig] = useState<Config>({});
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getConfig().then(setConfig).catch(console.error);
+    getConfig()
+      .then(setConfig)
+      .catch((e: unknown) => {
+        setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleSave() {
@@ -28,6 +34,22 @@ export default function SettingsPanel() {
     <div className="settings-view">
       <h2>Settings</h2>
 
+      {loading && (
+        <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Loading...</p>
+      )}
+
+      {status.startsWith("error") && (
+        <div style={{
+          padding: "8px 12px", marginBottom: 16,
+          background: "rgba(212,90,90,0.1)",
+          border: "1px solid var(--danger)",
+          borderRadius: "var(--radius)",
+          color: "var(--danger)", fontSize: 13,
+        }}>
+          {status}
+        </div>
+      )}
+
       <div className="form-group">
         <label>API Key</label>
         <input
@@ -42,7 +64,7 @@ export default function SettingsPanel() {
         <label>Base URL</label>
         <input
           type="text"
-          placeholder="https://api.deepseek.com/v1"
+          placeholder="https://api.openai.com/v1"
           value={config.base_url ?? ""}
           onChange={(e) => setConfig({ ...config, base_url: e.target.value })}
         />
@@ -52,7 +74,7 @@ export default function SettingsPanel() {
         <label>Model</label>
         <input
           type="text"
-          placeholder="deepseek-chat"
+          placeholder="gpt-4o"
           value={config.model ?? ""}
           onChange={(e) => setConfig({ ...config, model: e.target.value })}
         />
@@ -91,9 +113,6 @@ export default function SettingsPanel() {
         </button>
         {status === "saved" && (
           <span className="status-badge saved">Saved</span>
-        )}
-        {status.startsWith("error") && (
-          <span className="status-badge error">{status}</span>
         )}
       </div>
     </div>
