@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   listWorlds,
   getWorldTemplate,
@@ -11,6 +11,7 @@ import {
 } from "../services/api";
 import NewWorldDialog from "./NewWorldDialog";
 import WorldFileEditor from "./WorldFileEditor";
+import TemplateList from "./TemplateList";
 
 type WorldFile = "world" | "player" | "preferences";
 
@@ -18,6 +19,7 @@ export default function TemplateEditor() {
   const [worlds, setWorlds] = useState<string[]>([]);
   const [selectedWorld, setSelectedWorld] = useState("");
   const [activeFile, setActiveFile] = useState<WorldFile>("world");
+  const [editing, setEditing] = useState(false);
 
   const [worldData, setWorldData] = useState("");
   const [playerData, setPlayerData] = useState("");
@@ -27,20 +29,23 @@ export default function TemplateEditor() {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
   const [showNewWorld, setShowNewWorld] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => void loadAll(), []);
-  useEffect(() => {
-    if (selectedWorld) loadWorldFiles(selectedWorld);
-  }, [selectedWorld]);
 
   async function loadAll() {
     try {
       const w = await listWorlds();
       setWorlds(w.worlds);
-      if (w.worlds.length > 0 && !selectedWorld) setSelectedWorld(w.worlds[0]);
     } catch (e: unknown) {
       setStatus("error: " + (e instanceof Error ? e.message : String(e)));
     }
+  }
+
+  function openEditor(world: string) {
+    setSelectedWorld(world);
+    setEditing(true);
+    loadWorldFiles(world);
   }
 
   async function loadWorldFiles(world: string) {
@@ -88,34 +93,93 @@ export default function TemplateEditor() {
     }
   }
 
+  async function handleImport() {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const name = file.name.replace(/\.(txt|yaml|md)$/i, "").toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 30) || "imported";
+      await updateWorldTemplate(name, { name, description: text, starting_scene: text });
+      await updatePlayerTemplate(name, { name: "Adventurer", description: "", background: "" });
+      await updatePreferencesTemplate(name, { narrative_style: "", tone: "", pacing: "moderate", detail_level: "rich" });
+      await loadAll();
+      openEditor(name);
+    } catch (e: unknown) {
+      setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+    }
+  }
+
+  if (editing && selectedWorld) {
+    return (
+      <div className="template-view">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <h2>Editing: {selectedWorld}</h2>
+          <button className="secondary" onClick={() => { setEditing(false); loadAll(); }}>
+            Back to Templates
+          </button>
+        </div>
+
+        <WorldFileEditor
+          worlds={worlds}
+          selectedWorld={selectedWorld}
+          onSelectWorld={(w) => { setSelectedWorld(w); loadWorldFiles(w); }}
+          activeFile={activeFile}
+          onSelectFile={setActiveFile}
+          fileData={fileMap[activeFile].data}
+          onFileDataChange={dataSetters[activeFile]}
+          preview={preview}
+          onSave={handleSave}
+          saving={saving}
+          status={status}
+          onNewWorld={() => setShowNewWorld(true)}
+        />
+
+        {showNewWorld && (
+          <NewWorldDialog
+            onCreated={(world) => {
+              setShowNewWorld(false);
+              loadAll().then(() => openEditor(world));
+            }}
+            onError={(msg) => setStatus("error: " + msg)}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="template-view">
-      <h2>Template Manager</h2>
+    <>
+      <TemplateList
+        worlds={worlds}
+        selectedWorld={selectedWorld}
+        onSelect={openEditor}
+        onNewWorld={() => setShowNewWorld(true)}
+        onImport={() => fileInputRef.current?.click()}
+      />
 
       {showNewWorld && (
         <NewWorldDialog
           onCreated={(world) => {
             setShowNewWorld(false);
-            loadAll().then(() => setSelectedWorld(world));
+            loadAll().then(() => openEditor(world));
           }}
           onError={(msg) => setStatus("error: " + msg)}
         />
       )}
 
-      <WorldFileEditor
-        worlds={worlds}
-        selectedWorld={selectedWorld}
-        onSelectWorld={setSelectedWorld}
-        activeFile={activeFile}
-        onSelectFile={setActiveFile}
-        fileData={fileMap[activeFile].data}
-        onFileDataChange={dataSetters[activeFile]}
-        preview={preview}
-        onSave={handleSave}
-        saving={saving}
-        status={status}
-        onNewWorld={() => setShowNewWorld(true)}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".txt,.yaml,.md"
+        style={{ display: "none" }}
+        onChange={handleImport}
       />
-    </div>
+
+      {status.startsWith("error") && (
+        <div style={{ padding: "8px 16px", color: "var(--danger)", fontSize: 13 }}>
+          {status}
+        </div>
+      )}
+    </>
   );
 }

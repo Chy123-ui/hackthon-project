@@ -386,7 +386,7 @@ button:disabled {
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 13px;
-  resize: vertical;
+  resize: none;
 }
 
 .template-column textarea:focus {
