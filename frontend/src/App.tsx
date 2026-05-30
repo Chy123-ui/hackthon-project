@@ -13,6 +13,7 @@ function App() {
   const [gameKey, setGameKey] = useState(0);
   const [historyKey, setHistoryKey] = useState(0);
   const [templatesKey, setTemplatesKey] = useState(0);
+  const [settingsKey, setSettingsKey] = useState(0);
   const { theme, toggleTheme } = useTheme();
 
   function handleTabClick(id: Tab) {
@@ -22,6 +23,8 @@ function App() {
       setHistoryKey((k) => k + 1);
     } else if (id === "templates" && tab === "templates") {
       setTemplatesKey((k) => k + 1);
+    } else if (id === "settings" && tab === "settings") {
+      setSettingsKey((k) => k + 1);
     } else {
       setTab(id);
     }
@@ -60,7 +63,7 @@ function App() {
         {tab === "game" && <GameView key={gameKey} />}
         {tab === "history" && <HistoryView key={historyKey} />}
         {tab === "templates" && <TemplateEditor key={templatesKey} />}
-        {tab === "settings" && <SettingsPanel />}
+        {tab === "settings" && <SettingsPanel key={settingsKey} />}
       </div>
     </div>
   );
