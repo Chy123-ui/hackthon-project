@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     api_key: str = ""
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4o"
-    max_tokens: int = 4096
+    max_tokens: int = 16384
     temperature: float = 0.8
     context_limit: int = 131072
     data_dir: Path = Path(__file__).parent.parent.parent / "data"

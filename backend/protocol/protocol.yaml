@@ -52,10 +52,8 @@ protocol: |
    直接演出场景，就像小说叙事一样。200-500 字。
 
   ### 3. <state> 状态块 [不显示给玩家]
-  ## 额外设定 中如果定义了特殊系统（如属性、好感度、日历等），
-  你必须在 <state> 中为这些自定义字段创建对应的状态键。
-  例如模板定义了 体质、学识 属性，你就必须输出：
-  <set key="体质">10</set> <set key="学识">8</set>
+  所有状态键必须使用中文。禁止使用英文 key（如 knowledge, location）。
+  正确: <set key="学识">8</set>  错误: <set key="knowledge">8</set>
   极其重要！状态块必须使用 XML 标签，绝不能写成纯文本或 YAML 格式。
   正确的格式是：
 
@@ -73,9 +71,10 @@ protocol: |
   flags: {{}}           <-- 错误！
   
   每种操作的使用方法：
-  - <set key="x">value</set>    单值覆盖。可加 label：<set key="con" label="体质">10</set>
-  - <add key="x" value="v"/>    列表追加
-  - <add key="x" value="v" label="中文名"/>    列表追加+显示名
+  - <set key="x">value</set>    单值覆盖（如 位置、生命值）
+  - <add key="x" value="v"/>    列表追加（如 背包、任务）
+  - <del key="x"/>              删除某个键
+  所有键名必须中文。flags 允许存英文值但显示中文：<add key="flags" value="found_tavern" label="到访酒馆"/>
   - <del key="x"/>              删除某个键
   状态键推荐使用中文命名。flags 等集合型 key 允许存英文值，
   但必须同时提供中文 label 用于展示。
