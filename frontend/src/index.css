@@ -208,6 +208,11 @@ body {
   font-size: 14px;
 }
 
+.new-game-form input::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
 .new-game-form button,
 button.primary {
   padding: 10px 24px;

@@ -16,6 +16,7 @@ export default function GameView() {
   const [sessions, setSessions] = useState<GameListItem[]>([]);
   const [worlds, setWorlds] = useState<string[]>([]);
   const [playerName, setPlayerName] = useState("冒险者");
+  const [placeholderName, setPlaceholderName] = useState("冒险者");
   const [selectedWorld, setSelectedWorld] = useState("fantasy");
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,7 @@ export default function GameView() {
           : "";
         if (name) {
           setPlayerName(name);
+          setPlaceholderName(name);
           defaultNameRef.current = name;
         }
       })
@@ -150,7 +152,7 @@ export default function GameView() {
       <div className="new-game-form">
         <input
           type="text"
-          placeholder="Player Name"
+          placeholder={placeholderName}
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
         />
