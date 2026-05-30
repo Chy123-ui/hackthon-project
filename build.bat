@@ -28,7 +28,7 @@ if not exist ".venv\Scripts\python.exe" (
 .venv\Scripts\pip install -q pyinstaller
 
 echo [4/4] Building EXE (this will take a few minutes)...
-.venv\Scripts\pyinstaller --onefile --noconsole ^
+.venv\Scripts\pyinstaller --onefile ^
   --add-data "%BACKEND_DIR%\protocol;protocol" ^
   --add-data "%BACKEND_DIR%\default_worlds;default_worlds" ^
   --add-data "%FRONTEND_DIR%\dist;dist" ^

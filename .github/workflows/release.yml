@@ -51,7 +51,7 @@ jobs:
           pip install -r backend/requirements.txt
       - run: |
           cd backend
-          pyinstaller --onefile --noconsole `
+          pyinstaller --onefile `
             --add-data "protocol;protocol" `
             --add-data "default_worlds;default_worlds" `
             --add-data "../frontend/dist;dist" `
