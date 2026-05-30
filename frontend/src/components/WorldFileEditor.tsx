@@ -86,7 +86,7 @@ export default function WorldFileEditor({
           <textarea ref={editRef} value={fileData}
             onChange={(e) => { onFileDataChange(e.target.value); autoResize(editRef); }}
             onFocus={() => autoResize(editRef)}
-            style={{ minHeight: 300, padding: 12, background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13, resize: "none", overflow: "hidden" }}
+            style={{ minHeight: 300, padding: 12, background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13, resize: "none", overflowY: "auto" }}
           />
         </div>
         <div className="template-column" style={{ position: "relative" }}>
@@ -96,7 +96,7 @@ export default function WorldFileEditor({
           </div>
           <textarea ref={previewRef} readOnly value={preview}
             onFocus={() => autoResize(previewRef)}
-            style={{ minHeight: 300, padding: 12, background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13, resize: "none", overflow: "hidden" }}
+            style={{ minHeight: 300, padding: 12, background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13, resize: "none", overflowY: "auto" }}
           />
         </div>
       </div>

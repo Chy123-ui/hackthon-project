@@ -5,7 +5,7 @@ import {
   updatePreferencesTemplate, previewTemplate,
   exportWorld, importWorld, deleteWorld, generateWorld, getModifySuggestions,
 } from "../services/api";
-import NewWorldDialog, { MODIFY_EXAMPLES } from "./NewWorldDialog";
+import NewWorldDialog from "./NewWorldDialog";
 import WorldFileEditor from "./WorldFileEditor";
 import TemplateList from "./TemplateList";
 
@@ -32,7 +32,6 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
   const [aiModifying, setAiModifying] = useState(false);
   const [aiLoadingSuggestions, setAiLoadingSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const modifyExample = useRef(MODIFY_EXAMPLES[Math.floor(Math.random() * MODIFY_EXAMPLES.length)]);
 
   useEffect(() => void loadAll(), []);
 
@@ -170,11 +169,10 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
                     const txt = aiInstruction.trim();
                     if (txt) { handleAiAssist(); }
                     else if (aiSuggestions.length > 0) { setAiInstruction(aiSuggestions[0]); handleAiAssist(); }
-                    else { setAiInstruction(modifyExample.current); }
                   }
                 }}
                 disabled={aiModifying}
-                placeholder={aiSuggestions.length > 0 ? "Type or click a suggestion above" : `e.g. "${modifyExample.current}"`}
+                placeholder={aiSuggestions.length > 0 ? "Type or click a suggestion above" : "Describe your modification..."}
                 style={{
                   flex: 1, padding: "10px 14px", background: "var(--bg-input)",
                   border: "1px solid var(--border)", borderRadius: "var(--radius)",
