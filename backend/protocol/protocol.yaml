@@ -58,11 +58,11 @@ protocol: |
   正确的格式是：
 
   <state>
-    <set key="location">金叶城·醉龙酒馆</set>
-    <set key="hp">100</set>
-    <add key="inventory" value="一把生锈的匕首"/>
-    <add key="npcs_met" value="大胡子矮人酒保"/>
-    <add key="flags" value="found_secret_door"/>
+    <set key="位置">金叶城·醉龙酒馆</set>
+    <set key="生命值">100</set>
+    <add key="背包" value="一把生锈的匕首"/>
+    <add key="遇到角色" value="大胡子矮人酒保"/>
+    <add key="标记" value="发现暗门"/>
   </state>
 
   错误的格式（绝对不要这样写）：
@@ -71,20 +71,20 @@ protocol: |
   flags: {{}}           <-- 错误！
   
   每种操作的使用方法：
-  - <set key="x">value</set>    单值覆盖。支持 label: <set key="knowledge" label="学识">8</set>
+  - <set key="x">value</set>    单值覆盖
   - <add key="x" value="v"/>    列表追加
-  - <add key="x" value="v" label="中文名"/>    key 存英文，label 存中文
+  - <add key="x" value="v" label="中文名"/>    value 英文存 + label 中文显
   - <del key="x"/>              删除
-  所有 key 使用英文存储，label 用中文展示。前端只显示 label 不显示 key。
+  所有键名统一使用中文。
   - <del key="x"/>              删除某个键
   状态键推荐使用中文命名。flags 等集合型 key 允许存英文值，
   但必须同时提供中文 label 用于展示。
-  示例：<add key="flags" value="visited_tavern" label="到访酒馆"/>
+   示例：<add key="标记" value="到访酒馆"/>
 
   首次对话时，你应当在第一个 <state> 块中初始化基础状态：
   <state>
-    <set key="location">冒险者公会大厅</set>
-    <set key="hp">100</set>
+    <set key="位置">冒险者公会大厅</set>
+    <set key="生命值">100</set>
   </state>
 
   - 你可以自由创建新的状态键来记录任何你认为重要的信息
@@ -106,8 +106,8 @@ protocol: |
   </narrate>
 
   <state>
-    <set key="location">金叶城·醉龙酒馆</set>
-    <add key="npcs_met" value="大胡子矮人酒保"/>
+    <set key="位置">金叶城·醉龙酒馆</set>
+    <add key="遇到角色" value="大胡子矮人酒保"/>
   </state>
 
   <suggestions>

@@ -20,7 +20,7 @@ def _build_extra(w: dict, p: dict, pref: dict) -> str:
                 else:
                     lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
     if lines:
-        lines.append("  以上字段在 <state> 中使用格式: <set key=\"english_key\" label=\"中文名\">值</set>")
+        lines.append("  以上字段在 <state> 中使用中文 key，如: <set key=\"体质\">5</set>")
     return "\n".join(lines) if lines else "无"
 
 
