@@ -20,7 +20,7 @@ def _build_extra(w: dict, p: dict, pref: dict) -> str:
                 else:
                     lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
     if lines:
-        lines.append("  以上字段在 <state> 中使用中文 key，如: <set key=\"体质\">5</set>")
+        pass
     return "\n".join(lines) if lines else "无"
 
 
@@ -150,7 +150,7 @@ class PromptEngine:
         narrate_match = re.search(r"<narrate>(.*?)</narrate>", raw, re.DOTALL)
         if narrate_match:
             result["narrate"] = narrate_match.group(1).strip()
-        suggestions_block = re.search(r"<suggestions>(.*?)</suggestions>", raw, re.DOTALL)
+        suggestions_block = re.search(r"<(suggestions|actions)>(.*?)</\1>", raw, re.DOTALL)
         if suggestions_block:
             actions = re.findall(r"<action>(.*?)</action>", suggestions_block.group(1), re.DOTALL)
             result["suggestions"] = [a.strip() for a in actions]
@@ -163,12 +163,8 @@ class PromptEngine:
         return result
 
     def _parse_state_block(self, block: str, updates: dict) -> None:
-        for match in re.finditer(r"<set\s+key=\"([^\"]+)\"(?:\s+label=\"([^\"]*)\")?>(.*?)</set>", block, re.DOTALL):
-            key, label, val = match.group(1), match.group(2), match.group(3).strip()
-            if label:
-                updates[key] = {"value": val, "label": label}
-            else:
-                updates[key] = val
+        for match in re.finditer(r"<set\s+key=\"([^\"]+)\">(.*?)</set>", block, re.DOTALL):
+            updates[match.group(1)] = match.group(2).strip()
         for match in re.finditer(r"<add\s+key=\"([^\"]+)\"\s+value=\"([^\"]*)\"(\s+label=\"([^\"]*)\")?\s*/>", block):
             key, val, label = match.group(1), match.group(2), match.group(4)
             if key not in updates:
