@@ -212,8 +212,8 @@ export default function TemplateEditor() {
         onChange={handleImport}
       />
 
-      {status.startsWith("error") && (
-        <div style={{ padding: "8px 16px", color: "var(--danger)", fontSize: 13 }}>
+      {status && (
+        <div style={{ padding: "8px 16px", color: status.startsWith("error") ? "var(--danger)" : "var(--accent)", fontSize: 13 }}>
           {status}
         </div>
       )}
