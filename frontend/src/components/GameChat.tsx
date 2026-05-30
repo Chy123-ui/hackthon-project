@@ -32,7 +32,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    loadSession();
+    loadSession(true);
   }, [gameId]);
 
   useEffect(() => {
@@ -53,12 +53,14 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     });
   }, [displayStream.length, streamComplete, typewriterComplete]);
 
-  async function loadSession() {
+  async function loadSession(withMeta = false) {
     try {
       const data = await getGameHistory(gameId);
       setSession(data);
-      setGameState(data.game_state || {});
-      setSuggestions(data.suggestions || []);
+      if (withMeta) {
+        setGameState(data.game_state || {});
+        setSuggestions(data.suggestions || []);
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     }
