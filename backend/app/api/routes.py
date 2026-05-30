@@ -190,7 +190,7 @@ IMPORT_PROMPT = """你是一个游戏世界观文件解析器。下面是用户�
 
 ```yaml
 # world.yaml
-name: 英文 slug
+name: 世界名称（使用中文，如 "赛博东京"）
 description: |
   世界观描述
 starting_scene: |
@@ -446,7 +446,7 @@ def _save_world_files(world_name: str, files: dict) -> None:
 
 def _basename(filename: str) -> str:
     name = filename.rsplit(".", 1)[0] if "." in filename else filename
-    return re.sub(r"[^a-z0-9_]", "_", name.lower())[:30]
+    return _sanitize_name(name)
 
 
 # ---- Templates: AI Generate ----
@@ -457,7 +457,7 @@ WORLD_GEN_PROMPT = """你是一个游戏世界观设计师。根据用户提供�
 
 ```yaml
 # world.yaml
-name: 世界名称（英文 slug，如 cyberpunk_city）
+name: 世界名称（中文，如 "赛博朋克东京"）
 description: |
   详细的世界观描述，包括地理、历史、势力、种族等
 starting_scene: |
@@ -542,13 +542,18 @@ def _parse_world_gen(raw: str, concept: str):
 def _extract_name(yaml_str: str, fallback: str) -> str:
     m = re.search(r"^name:\s*(\S+)", yaml_str, re.MULTILINE)
     if m:
-        name = m.group(1).lower().replace(" ", "_")
-        return re.sub(r"[^a-z0-9_]", "", name)
-    return re.sub(r"[^a-z0-9_]", "_", fallback.lower().replace(" ", "_"))[:20]
+        name = m.group(1).strip().strip('"\'')
+        name = re.sub(r"[\/\\:*?\"<>|]", "", name)
+        return name[:30] if name else _sanitize_name(fallback)
+    return _sanitize_name(fallback)
+
+
+def _sanitize_name(name: str) -> str:
+    return re.sub(r"[\/\\:*?\"<>|]", "", name.strip())[:30]
 
 
 def _fallback_parse(raw: str, concept: str):
-    wname = re.sub(r"[^a-z0-9_]", "_", concept.lower().replace(" ", "_"))[:20]
+    wname = _sanitize_name(concept)
     safe = concept.replace('"', "'")
     return wname, {
         "world.yaml": f"name: {safe}\ndescription: |\n  这是一个以「{safe}」为主题的世界。\n\nstarting_scene: |\n  {{player_name}}睁开双眼，发现自己正处在一个陌生的环境中。",

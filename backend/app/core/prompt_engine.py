@@ -143,12 +143,13 @@ class PromptEngine:
     def _parse_state_block(self, block: str, updates: dict) -> None:
         for match in re.finditer(r"<set\s+key=\"([^\"]+)\">(.*?)</set>", block, re.DOTALL):
             updates[match.group(1)] = match.group(2).strip()
-        for match in re.finditer(r"<add\s+key=\"([^\"]+)\"\s+value=\"([^\"]*)\"\s*/>", block):
-            key, val = match.group(1), match.group(2)
+        for match in re.finditer(r"<add\s+key=\"([^\"]+)\"\s+value=\"([^\"]*)\"(\s+label=\"([^\"]*)\")?\s*/>", block):
+            key, val, label = match.group(1), match.group(2), match.group(4)
             if key not in updates:
                 updates[key] = []
             if isinstance(updates[key], list):
-                updates[key].append(val)
+                entry = {"value": val, "label": label} if label else val
+                updates[key].append(entry)
         for match in re.finditer(r"<del\s+key=\"([^\"]+)\"\s*/>", block):
             updates[match.group(1)] = None
 
@@ -158,7 +159,15 @@ class PromptEngine:
             if value is None:
                 new_state.pop(key, None)
             elif isinstance(value, list) and key in new_state and isinstance(new_state[key], list):
-                new_state[key] = new_state[key] + [v for v in value if v not in new_state[key]]
+                existing_set = {v.get("value") if isinstance(v, dict) else v for v in new_state[key]}
+                for v in value:
+                    v_clean = v.get("value") if isinstance(v, dict) else v
+                    if v_clean not in existing_set:
+                        new_state[key].append(v)
+                        if isinstance(v, dict):
+                            existing_set.add(v.get("value"))
+                        else:
+                            existing_set.add(v)
             else:
                 new_state[key] = value
         return new_state

@@ -63,9 +63,11 @@ protocol: |
   每种操作的使用方法：
   - <set key="x">value</set>    单值覆盖（用于 位置、生命值 等单一值）
   - <add key="x" value="v"/>    列表追加（用于 背包、任务 等集合）
+  - <add key="x" value="v" label="中文名"/>    列表追加+显示名（key 存英文，label 存中文展示用）
   - <del key="x"/>              删除某个键
-  所有状态键必须使用中文命名（如 "位置" 而非 "location"，"背包" 而非 "inventory"）。
-  示例：<set key="位置">金叶城·醉龙酒馆</set>
+  状态键推荐使用中文命名。flags 等集合型 key 允许存英文值，
+  但必须同时提供中文 label 用于展示。
+  示例：<add key="flags" value="visited_tavern" label="到访酒馆"/>
 
   首次对话时，你应当在第一个 <state> 块中初始化基础状态：
   <state>
