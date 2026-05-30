@@ -41,7 +41,14 @@ function App() {
   return (
     <div className="app">
       <div className="tab-bar">
-        <div className="nav-brand">re:life</div>
+        <a
+          className="nav-brand"
+          href="https://github.com/Chy123-ui/hackthon-project"
+          target="_blank"
+          rel="noreferrer"
+        >
+          re:life
+        </a>
         {tabs.map((t) => (
           <button
             key={t.id}
