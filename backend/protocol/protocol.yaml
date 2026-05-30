@@ -73,9 +73,9 @@ protocol: |
   flags: {{}}           <-- 错误！
   
   每种操作的使用方法：
-  - <set key="x">value</set>    单值覆盖（用于 位置、生命值 等单一值）
-  - <add key="x" value="v"/>    列表追加（用于 背包、任务 等集合）
-  - <add key="x" value="v" label="中文名"/>    列表追加+显示名（key 存英文，label 存中文展示用）
+  - <set key="x">value</set>    单值覆盖。可加 label：<set key="con" label="体质">10</set>
+  - <add key="x" value="v"/>    列表追加
+  - <add key="x" value="v" label="中文名"/>    列表追加+显示名
   - <del key="x"/>              删除某个键
   状态键推荐使用中文命名。flags 等集合型 key 允许存英文值，
   但必须同时提供中文 label 用于展示。

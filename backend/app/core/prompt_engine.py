@@ -154,8 +154,12 @@ class PromptEngine:
         return result
 
     def _parse_state_block(self, block: str, updates: dict) -> None:
-        for match in re.finditer(r"<set\s+key=\"([^\"]+)\">(.*?)</set>", block, re.DOTALL):
-            updates[match.group(1)] = match.group(2).strip()
+        for match in re.finditer(r"<set\s+key=\"([^\"]+)\"(?:\s+label=\"([^\"]*)\")?>(.*?)</set>", block, re.DOTALL):
+            key, label, val = match.group(1), match.group(2), match.group(3).strip()
+            if label:
+                updates[key] = {"value": val, "label": label}
+            else:
+                updates[key] = val
         for match in re.finditer(r"<add\s+key=\"([^\"]+)\"\s+value=\"([^\"]*)\"(\s+label=\"([^\"]*)\")?\s*/>", block):
             key, val, label = match.group(1), match.group(2), match.group(4)
             if key not in updates:
