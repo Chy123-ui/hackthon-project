@@ -31,6 +31,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     loadSession(true);
@@ -86,6 +87,9 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         : prev
     );
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     await sendActionStream(
       gameId,
       action,
@@ -99,9 +103,11 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         setGameState(newState);
       },
       () => {
+        abortRef.current = null;
         setStreamComplete(true);
       },
       (err) => {
+        abortRef.current = null;
         setError(err);
         loadSession().then(() => {
           setStreamingText("");
@@ -109,8 +115,20 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
           setStreamComplete(false);
           setLoading(false);
         });
-      }
+      },
+      controller.signal
     );
+  }
+
+  function handleStop() {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    loadSession().then(() => {
+      setStreamingText("");
+      setDisplayStream("");
+      setStreamComplete(false);
+      setLoading(false);
+    });
   }
 
   return (
@@ -169,6 +187,8 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         onChange={setInput}
         onSend={handleSend}
         disabled={loading}
+        loading={loading}
+        onStop={handleStop}
         inputRef={inputRef}
       />
     </div>
@@ -250,12 +270,16 @@ function ChatInput({
   onChange,
   onSend,
   disabled,
+  loading,
+  onStop,
   inputRef,
 }: {
   value: string;
   onChange: (v: string) => void;
   onSend: (text: string) => void;
   disabled: boolean;
+  loading: boolean;
+  onStop: () => void;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
 }) {
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -288,6 +312,15 @@ function ChatInput({
       <button className="primary" onClick={handleClick} disabled={disabled}>
         Send
       </button>
+      {loading && (
+        <button
+          className="primary"
+          onClick={onStop}
+          style={{ background: "var(--danger)" }}
+        >
+          Stop
+        </button>
+      )}
     </div>
   );
 }

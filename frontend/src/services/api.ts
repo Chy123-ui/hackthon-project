@@ -131,13 +131,15 @@ export async function sendActionStream(
   onChunk: (text: string) => void,
   onParsed: (suggestions: string[], state: Record<string, unknown>) => void,
   onDone: () => void,
-  onError: (err: string) => void
+  onError: (err: string) => void,
+  signal?: AbortSignal
 ): Promise<void> {
   try {
     const res = await fetch(`${API_BASE}/game/${gameId}/action/stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
+      signal,
     });
     const reader = res.body?.getReader();
     if (!reader) throw new Error("No reader");

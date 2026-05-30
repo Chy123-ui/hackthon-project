@@ -433,8 +433,10 @@ async def game_action_stream(game_id: str, body: GameAction):
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
         finally:
             if full_reply:
+                truncated = "</narrate>" not in full_reply
+                tape_tag = "truncated" if truncated else "normal"
                 session["messages"].append({"role": "user", "content": body.action, "tape": "normal"})
-                session["messages"].append({"role": "assistant", "content": full_reply, "tape": "normal"})
+                session["messages"].append({"role": "assistant", "content": full_reply, "tape": tape_tag})
                 session["turn"] += 1
                 parsed = _build_and_tag(session, full_reply)
                 if parsed["state_updates"]:

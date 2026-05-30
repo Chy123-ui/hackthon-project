@@ -42,6 +42,24 @@ def assemble_messages(
 
     result = []
     used = 0
+    last_was_truncated = False
+
+    for m in messages:
+        tape = m.get("tape", "normal")
+
+        if last_was_truncated and m.get("role") == "user":
+            note = {
+                "role": "assistant",
+                "content": "[The previous response was interrupted. Continuing from where you left off.]",
+            }
+            est = 4 + len(note["content"]) // 4
+            if used + est <= budget:
+                result.append(note)
+                used += est
+        last_was_truncated = False
+
+        if tape == "truncated":
+            last_was_truncated = True
 
     for m in messages:
         tape = m.get("tape", "normal")
