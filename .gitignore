@@ -10,6 +10,7 @@ env/
 # Node
 node_modules/
 dist/
+build/
 
 # Runtime data (user worlds in data/worlds/)
 # fantasy template lives in default_worlds/ (not data/) -- always tracked
