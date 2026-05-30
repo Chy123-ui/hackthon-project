@@ -5,3 +5,4 @@ pyyaml==6.0.2
 pydantic==2.9.2
 pydantic-settings==2.5.2
 cryptography==44.0.0
+colorama==0.4.6
