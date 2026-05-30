@@ -29,12 +29,13 @@ if not exist ".venv\Scripts\python.exe" (
 
 echo [4/4] Building EXE (this will take a few minutes)...
 .venv\Scripts\pyinstaller --onefile --noconsole ^
-  --add-data "protocol;protocol" ^
-  --add-data "default_worlds;default_worlds" ^
+  --add-data "%BACKEND_DIR%\protocol;protocol" ^
+  --add-data "%BACKEND_DIR%\default_worlds;default_worlds" ^
   --add-data "%FRONTEND_DIR%\dist;dist" ^
-  --distpath "%BUILD_DIR%" --workpath "%BUILD_DIR%\tmp" --specpath "%BUILD_DIR%\tmp" ^
+  --distpath "%BUILD_DIR%" ^
+  --workpath "%BUILD_DIR%\tmp" ^
   --name "re-life" ^
-  launcher.py
+  "%BACKEND_DIR%\launcher.py"
 
 echo.
 echo ============================================
