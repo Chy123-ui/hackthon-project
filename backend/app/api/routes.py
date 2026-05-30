@@ -186,7 +186,8 @@ IMPORT_PROMPT = """你是一个游戏世界观文件解析器。下面是用户�
 如果是结构化的 YAML 格式，直接输出优化后的 YAML。
 如果是纯文本故事描述，提取其中的世界设定生成 YAML 格式。
 
-请严格按照以下格式输出（三个 YAML 块）：
+ 请输出三个 YAML 块（world.yaml / player.yaml / preferences.yaml）。
+ name, description, starting_scene 等基础字段必须存在，但你可以自由添加额外字段。
 
 ```yaml
 # world.yaml
@@ -220,7 +221,7 @@ detail_level: 细节程度
 
 MODIFY_PROMPT = """你是一个游戏世界观编辑助手。下面是当前游戏世界的模板文件。
 用户有一项修改需求，请根据需求修改模板并在新的世界名中体现修改。
-返回修改后完整的三个 YAML 块（和生成世界一样的格式）。
+返回修改后完整的三个 YAML 块。基础字段必须保留，你可以自由调整或添加额外字段。
 
 修改需求：{instruction}
 
@@ -241,7 +242,7 @@ MODIFY_PROMPT = """你是一个游戏世界观编辑助手。下面是当前游�
 {prefs_content}
 ```
 
-请直接输出修改后的完整 YAML，不要加任何解释。"""
+请直接输出修改后的完整 YAML，可以添加额外字段，不要加解释。"""
 
 
 @router.post("/templates/{world}/modify")
@@ -453,7 +454,9 @@ def _basename(filename: str) -> str:
 
 WORLD_GEN_PROMPT = """你是一个游戏世界观设计师。根据用户提供的概念，生成一套完整的文字冒险游戏设定。
 
-请严格按照以下 YAML 格式输出，不要添加任何额外说明文字：
+请输出三个 YAML 块（world.yaml / player.yaml / preferences.yaml）。
+name, description, starting_scene 等基础字段必须存在，但你可以自由添加额外字段
+（如 magic_system, factions, calendar 等），它们会被注入系统提示词。
 
 ```yaml
 # world.yaml

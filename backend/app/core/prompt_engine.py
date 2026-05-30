@@ -7,6 +7,18 @@ from pathlib import Path
 from .config import settings
 
 
+def _build_extra(w: dict, p: dict, pref: dict) -> str:
+    """Extract extra YAML fields not in the standard schema"""
+    known = {"name", "description", "starting_scene", "background", "narrative_style", "tone", "pacing", "detail_level"}
+    lines = []
+    for label, data in [("世界额外设定", w), ("角色额外设定", p), ("偏好额外设定", pref)]:
+        extras = {k: v for k, v in data.items() if k not in known}
+        if extras:
+            for k, v in extras.items():
+                lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
+    return "\n".join(lines) if lines else "无"
+
+
 class PromptEngine:
     def __init__(self):
         self.worlds_dir = settings.worlds_dir
@@ -96,6 +108,7 @@ class PromptEngine:
             "tone": pref.get("tone", ""),
             "pacing": pref.get("pacing", ""),
             "detail_level": pref.get("detail_level", ""),
+            "extra_context": _build_extra(w, p, pref),
         }
 
     def render_system_prompt(
