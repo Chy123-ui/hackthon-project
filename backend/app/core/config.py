@@ -12,7 +12,6 @@ class Settings(BaseSettings):
     data_dir: Path = Path(__file__).parent.parent.parent / "data"
     worlds_dir: Path = Path(__file__).parent.parent.parent / "data" / "worlds"
     protocol_dir: Path = Path(__file__).parent.parent.parent / "protocol"
-    default_worlds_dir: Path = Path(__file__).parent.parent.parent / "worlds"
 
     model_config = {"env_prefix": "AIWENYOU_"}
 

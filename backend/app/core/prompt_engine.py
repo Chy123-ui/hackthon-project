@@ -1,5 +1,6 @@
 """分层 Prompt 模板引擎 -- Agent 协议 + 状态管理 + 响应解析"""
 import re
+import shutil
 import yaml
 from typing import Optional
 from pathlib import Path
@@ -10,7 +11,8 @@ class PromptEngine:
     def __init__(self):
         self.worlds_dir = settings.worlds_dir
         self.protocol_dir = settings.protocol_dir
-        self.default_worlds_dir = settings.default_worlds_dir
+        self.worlds_dir.mkdir(parents=True, exist_ok=True)
+        self._seed_defaults()
 
     def _load_yaml(self, path) -> dict:
         with open(path, "r", encoding="utf-8") as f:
@@ -21,7 +23,13 @@ class PromptEngine:
         with open(path, "w", encoding="utf-8") as f:
             yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 
-    # ---- Core (locked) ----
+    def _seed_defaults(self) -> None:
+        fantasy = self.worlds_dir / "fantasy"
+        if fantasy.exists():
+            return
+        default = Path(__file__).parent.parent.parent / "default_worlds" / "fantasy"
+        if default.exists():
+            shutil.copytree(default, fantasy)
 
     def load_protocol(self) -> str:
         path = self.protocol_dir / "protocol.yaml"
@@ -37,14 +45,9 @@ class PromptEngine:
             return data.get("rules", "")
         return ""
 
-    # ---- World (user-editable) ----
-
     def _find_world_file(self, world: str, filename: str) -> Optional[Path]:
-        for base in (self.worlds_dir, self.default_worlds_dir):
-            path = base / world / filename
-            if path.exists():
-                return path
-        return None
+        path = self.worlds_dir / world / filename
+        return path if path.exists() else None
 
     def load_world(self, world: str) -> Optional[dict]:
         path = self._find_world_file(world, "world.yaml")
@@ -66,8 +69,6 @@ class PromptEngine:
 
     def save_preferences(self, world: str, data: dict) -> None:
         self._save_yaml(self.worlds_dir / world / "preferences.yaml", data)
-
-    # ---- Merge & Render ----
 
     def _format_state_context(self, state: dict) -> str:
         if not state:
@@ -107,70 +108,47 @@ class PromptEngine:
         safety = self.load_safety()
         context = self.build_context(world, player_name)
         context["state_context"] = self._format_state_context(game_state or {})
-
         prompt = protocol.format(**context)
         if safety:
             prompt += "\n\n" + safety
         return prompt
 
-    def render_first_message(
-        self, world: str, player_name: str
-    ) -> str:
+    def render_first_message(self, world: str, player_name: str) -> str:
         w = self.load_world(world) or {}
         starting_scene = w.get("starting_scene", "")
         if starting_scene:
             return starting_scene.format(player_name=player_name)
         return f"{player_name}的冒险开始了。"
 
-    # ---- State Management ----
-
     def parse_response(self, raw: str) -> dict:
         result = {"thought": "", "narrate": "", "suggestions": [], "state_updates": {}}
-
         thought_match = re.search(r"<thought>(.*?)</thought>", raw, re.DOTALL)
         if thought_match:
             result["thought"] = thought_match.group(1).strip()
-
         narrate_match = re.search(r"<narrate>(.*?)</narrate>", raw, re.DOTALL)
         if narrate_match:
             result["narrate"] = narrate_match.group(1).strip()
-
-        suggestions_block = re.search(
-            r"<suggestions>(.*?)</suggestions>", raw, re.DOTALL
-        )
+        suggestions_block = re.search(r"<suggestions>(.*?)</suggestions>", raw, re.DOTALL)
         if suggestions_block:
-            actions = re.findall(
-                r"<action>(.*?)</action>", suggestions_block.group(1), re.DOTALL
-            )
+            actions = re.findall(r"<action>(.*?)</action>", suggestions_block.group(1), re.DOTALL)
             result["suggestions"] = [a.strip() for a in actions]
-
         state_block = re.search(r"<state>(.*?)</state>", raw, re.DOTALL)
         if state_block:
             self._parse_state_block(state_block.group(1), result["state_updates"])
-
-        key_node = re.search(
-            r"<key-node\s+summary=\"([^\"]*)\"\s*/>", raw
-        )
+        key_node = re.search(r"<key-node\s+summary=\"([^\"]*)\"\s*/>", raw)
         if key_node:
             result["key_node_summary"] = key_node.group(1)
-
         return result
 
     def _parse_state_block(self, block: str, updates: dict) -> None:
-        for match in re.finditer(
-            r"<set\s+key=\"([^\"]+)\">(.*?)</set>", block, re.DOTALL
-        ):
+        for match in re.finditer(r"<set\s+key=\"([^\"]+)\">(.*?)</set>", block, re.DOTALL):
             updates[match.group(1)] = match.group(2).strip()
-
-        for match in re.finditer(
-            r"<add\s+key=\"([^\"]+)\"\s+value=\"([^\"]*)\"\s*/>", block
-        ):
+        for match in re.finditer(r"<add\s+key=\"([^\"]+)\"\s+value=\"([^\"]*)\"\s*/>", block):
             key, val = match.group(1), match.group(2)
             if key not in updates:
                 updates[key] = []
             if isinstance(updates[key], list):
                 updates[key].append(val)
-
         for match in re.finditer(r"<del\s+key=\"([^\"]+)\"\s*/>", block):
             updates[match.group(1)] = None
 
@@ -185,13 +163,11 @@ class PromptEngine:
                 new_state[key] = value
         return new_state
 
-    # ---- Listing ----
-
     def list_worlds(self) -> list[str]:
-        world_names = set()
-        for base in (self.worlds_dir, self.default_worlds_dir):
-            if base.exists():
-                for d in base.iterdir():
-                    if d.is_dir() and (d / "world.yaml").exists():
-                        world_names.add(d.name)
-        return sorted(world_names)
+        if not self.worlds_dir.exists():
+            return []
+        return sorted([
+            d.name
+            for d in self.worlds_dir.iterdir()
+            if d.is_dir() and (d / "world.yaml").exists()
+        ])
