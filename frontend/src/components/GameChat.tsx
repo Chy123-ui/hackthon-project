@@ -33,7 +33,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
   const [error, setError] = useState("");
   const [expandedThoughts, setExpandedThoughts] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     loadSession();
@@ -106,9 +106,45 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     });
   }
 
-  function displayContent(raw: string): string {
-    const match = raw.match(/<narrate>([\s\S]*?)<\/narrate>/);
-    return match ? match[1].trim() : raw;
+  /** Highlight quoted dialogue within narration text */
+  function highlightDialogue(text: string): React.ReactNode {
+    const parts = text.split(/(".*?"|「.*?」|".*?")/g);
+    return parts.map((part, i) => {
+      if (/^["「].*["」]$/.test(part)) {
+        return (
+          <span key={i} className="dialogue">
+            {part}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  }
+
+  /** Parse assistant message and render with visual layers */
+  function renderAssistantContent(raw: string, msgIdx: number): React.ReactNode {
+    const thought = extractTag(raw, "thought");
+    const narrate = extractTag(raw, "narrate") || raw;
+    const showThought = expandedThoughts.has(msgIdx);
+
+    return (
+      <div className="assistant-content">
+        {thought && (
+          <div className={`thought-block${showThought ? " visible" : ""}`}>
+            <div
+              className="thought-toggle"
+              onClick={() => toggleThought(msgIdx)}
+            >
+              {showThought ? "Hide GM Thought" : "GM Thought"}
+            </div>
+            {showThought && (
+              <div className="thought-text">{thought}</div>
+            )}
+          </div>
+        )}
+        <div className="narrate-block">{highlightDialogue(narrate)}</div>
+      </div>
+    );
   }
 
   function displayStream(raw: string): string {
@@ -131,50 +167,25 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <div className="chat-messages" style={{ flex: 1 }}>
-          {session?.messages.map((msg, i) => {
-            const thought = msg.role === "assistant" ? extractTag(msg.content, "thought") : "";
-            const expanded = expandedThoughts.has(i);
-
-            return (
-              <div key={i}>
-                <div className={`message ${msg.role}`}>
-                  <div className="role-label">
-                    {msg.role === "user" ? playerName : "GM"}
-                  </div>
-                  {displayContent(msg.content)}
-                </div>
-                {thought && (
-                  <div style={{ textAlign: "left", marginTop: -10, marginBottom: 12 }}>
-                    <button
-                      className="secondary"
-                      onClick={() => toggleThought(i)}
-                      style={{ fontSize: 11, padding: "3px 10px", marginLeft: 16 }}
-                    >
-                      {expanded ? "Hide thought" : "Show thought"}
-                    </button>
-                    {expanded && (
-                      <div
-                        className="message assistant"
-                        style={{
-                          opacity: 0.55,
-                          fontSize: 12,
-                          fontStyle: "italic",
-                          marginTop: 4,
-                          marginLeft: 16,
-                        }}
-                      >
-                        {thought}
-                      </div>
-                    )}
-                  </div>
-                )}
+          {session?.messages.map((msg, i) => (
+            <div key={i} className={`message ${msg.role}`}>
+              <div className="role-label">
+                {msg.role === "user" ? playerName : "GM"}
               </div>
-            );
-          })}
+              {msg.role === "user" ? (
+                <div className="action-text">{msg.content}</div>
+              ) : (
+                renderAssistantContent(msg.content, i)
+              )}
+            </div>
+          ))}
           {streamingText && (
             <div className="message assistant">
               <div className="role-label">GM</div>
-              {displayStream(streamingText)}
+              <div className="narrate-block streaming">
+                {displayStream(streamingText)}
+                <span className="typing-cursor" />
+              </div>
             </div>
           )}
           {loading && !streamingText && (
@@ -274,10 +285,9 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
       )}
 
       <div className="chat-input-area">
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
-          placeholder={loading ? "Waiting for GM..." : "What do you do?"}
+          placeholder={loading ? "Waiting for GM..." : "What do you do? (Enter to send, Shift+Enter for newline)"}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
