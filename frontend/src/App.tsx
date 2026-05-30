@@ -54,7 +54,7 @@ function App() {
         <div className="nav-search">
           <input
             type="search"
-            placeholder="搜索故事..."
+            placeholder="搜索..."
             value={historySearch}
             onChange={(e) => setHistorySearch(e.target.value)}
           />
