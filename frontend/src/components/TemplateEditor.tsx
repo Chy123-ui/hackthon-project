@@ -18,7 +18,11 @@ import TemplateList from "./TemplateList";
 
 type WorldFile = "world" | "player" | "preferences";
 
-export default function TemplateEditor() {
+interface Props {
+  searchQuery?: string;
+}
+
+export default function TemplateEditor({ searchQuery = "" }: Props) {
   const [worlds, setWorlds] = useState<string[]>([]);
   const [selectedWorld, setSelectedWorld] = useState("");
   const [activeFile, setActiveFile] = useState<WorldFile>("world");
@@ -173,10 +177,15 @@ export default function TemplateEditor() {
     );
   }
 
+  const keyword = searchQuery.trim().toLowerCase();
+  const visibleWorlds = keyword
+    ? worlds.filter((world) => world.toLowerCase().includes(keyword))
+    : worlds;
+
   return (
     <>
       <TemplateList
-        worlds={worlds}
+        worlds={visibleWorlds}
         selectedWorld={selectedWorld}
         onSelect={openEditor}
         onNewWorld={() => setShowNewWorld(true)}

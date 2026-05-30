@@ -70,7 +70,7 @@ function App() {
       <div className="tab-content">
         {tab === "game" && <GameView key={gameKey} searchQuery={historySearch} />}
         {tab === "history" && <HistoryView key={historyKey} searchQuery={historySearch} />}
-        {tab === "templates" && <TemplateEditor key={templatesKey} />}
+        {tab === "templates" && <TemplateEditor key={templatesKey} searchQuery={historySearch} />}
         {tab === "settings" && <SettingsPanel key={settingsKey} />}
       </div>
     </div>
