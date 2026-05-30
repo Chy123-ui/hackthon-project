@@ -2,6 +2,7 @@
 import re
 import yaml
 from typing import Optional
+from pathlib import Path
 from .config import settings
 
 
@@ -38,35 +39,33 @@ class PromptEngine:
 
     # ---- World (user-editable) ----
 
-    def load_world(self, world: str) -> Optional[dict]:
-        path = self.worlds_dir / "worlds" / world / "world.yaml"
-        if path.exists():
-            return self._load_yaml(path)
+    def _find_world_file(self, world: str, filename: str) -> Optional[Path]:
+        for base in (self.worlds_dir, self.default_worlds_dir):
+            path = base / world / filename
+            if path.exists():
+                return path
         return None
+
+    def load_world(self, world: str) -> Optional[dict]:
+        path = self._find_world_file(world, "world.yaml")
+        return self._load_yaml(path) if path else None
 
     def save_world(self, world: str, data: dict) -> None:
-        path = self.worlds_dir / "worlds" / world / "world.yaml"
-        self._save_yaml(path, data)
+        self._save_yaml(self.worlds_dir / world / "world.yaml", data)
 
     def load_player(self, world: str) -> Optional[dict]:
-        path = self.worlds_dir / "worlds" / world / "player.yaml"
-        if path.exists():
-            return self._load_yaml(path)
-        return None
+        path = self._find_world_file(world, "player.yaml")
+        return self._load_yaml(path) if path else None
 
     def save_player(self, world: str, data: dict) -> None:
-        path = self.worlds_dir / "worlds" / world / "player.yaml"
-        self._save_yaml(path, data)
+        self._save_yaml(self.worlds_dir / world / "player.yaml", data)
 
     def load_preferences(self, world: str) -> Optional[dict]:
-        path = self.worlds_dir / "worlds" / world / "preferences.yaml"
-        if path.exists():
-            return self._load_yaml(path)
-        return None
+        path = self._find_world_file(world, "preferences.yaml")
+        return self._load_yaml(path) if path else None
 
     def save_preferences(self, world: str, data: dict) -> None:
-        path = self.worlds_dir / "worlds" / world / "preferences.yaml"
-        self._save_yaml(path, data)
+        self._save_yaml(self.worlds_dir / world / "preferences.yaml", data)
 
     # ---- Merge & Render ----
 
@@ -189,11 +188,10 @@ class PromptEngine:
     # ---- Listing ----
 
     def list_worlds(self) -> list[str]:
-        worlds_dir = self.worlds_dir / "worlds"
-        if not worlds_dir.exists():
-            return []
-        return sorted([
-            d.name
-            for d in worlds_dir.iterdir()
-            if d.is_dir() and (d / "world.yaml").exists()
-        ])
+        world_names = set()
+        for base in (self.worlds_dir, self.default_worlds_dir):
+            if base.exists():
+                for d in base.iterdir():
+                    if d.is_dir() and (d / "world.yaml").exists():
+                        world_names.add(d.name)
+        return sorted(world_names)

@@ -262,7 +262,7 @@ def _parse_yaml_files(text: str) -> dict | None:
 
 def _save_world_files(world_name: str, files: dict) -> None:
     for filename, content in files.items():
-        path = settings.templates_dir / "worlds" / world_name / filename
+        path = settings.worlds_dir / world_name / filename
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
@@ -324,7 +324,7 @@ async def generate_world(body: dict):
     if world_name is None:
         raise HTTPException(status_code=500, detail="Failed to parse AI output")
     for filename, content in world_files.items():
-        path = settings.templates_dir / "worlds" / world_name / filename
+        path = settings.worlds_dir / world_name / filename
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
