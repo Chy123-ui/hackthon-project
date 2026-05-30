@@ -139,7 +139,14 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
               <input
                 value={aiInstruction}
                 onChange={(e) => setAiInstruction(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAiAssist()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    const txt = aiInstruction.trim();
+                    if (txt) { handleAiAssist(); }
+                    else { setAiInstruction(modifyExample.current); }
+                  }
+                }}
                 placeholder={`e.g. "${modifyExample.current}"`}
                 style={{
                   flex: 1, padding: "10px 14px", background: "var(--bg-input)",
