@@ -96,6 +96,7 @@ body {
   justify-content: center;
   height: 100%;
   padding: 32px;
+  overflow-y: auto;
 }
 
 .game-sessions h2 {

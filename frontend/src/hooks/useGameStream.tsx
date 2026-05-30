@@ -94,9 +94,9 @@ export class StreamDisplay {
 
 /** Split narration text and wrap quoted dialogue in styled spans */
 export function highlightDialogue(text: string): React.ReactNode {
-  const parts = text.split(/(".*?"|「.*?」|".*?")/g);
+  const parts = text.split(/(\u201c.*?\u201d|\u2018.*?\u2019|\u300c.*?\u300d|".*?")/g);
   return parts.map((part, i) => {
-    if (/^["「].*["」]$/.test(part)) {
+    if (/^[\u201c\u300c\u2018"].*[\u201d\u300d\u2019"]$/.test(part)) {
       return (
         <span key={i} className="dialogue">
           {part}

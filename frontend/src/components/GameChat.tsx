@@ -58,13 +58,13 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
       const data = await getGameHistory(gameId);
       setSession(data);
       setGameState(data.game_state || {});
+      setSuggestions(data.suggestions || []);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
 
-  async function handleSend() {
-    const action = input.trim();
+  async function handleSend(action: string) {
     if (!action || loading) return;
     setInput("");
     setLoading(true);
@@ -150,6 +150,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
           suggestions={suggestions}
           gameState={gameState}
           onSuggestionClick={setInput}
+          onSuggestionSend={(text) => handleSend(text)}
         />
       </div>
 
@@ -218,15 +219,21 @@ function ChatInput({
 }: {
   value: string;
   onChange: (v: string) => void;
-  onSend: () => void;
+  onSend: (text: string) => void;
   disabled: boolean;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
 }) {
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      onSend();
+      const text = e.currentTarget.value.trim();
+      if (text) onSend(text);
     }
+  }
+
+  function handleClick() {
+    const text = value.trim();
+    if (text) onSend(text);
   }
 
   return (
@@ -243,7 +250,7 @@ function ChatInput({
         onKeyDown={handleKeyDown}
         disabled={disabled}
       />
-      <button className="primary" onClick={onSend} disabled={disabled}>
+      <button className="primary" onClick={handleClick} disabled={disabled}>
         Send
       </button>
     </div>

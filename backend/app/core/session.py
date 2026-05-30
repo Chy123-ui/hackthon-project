@@ -24,6 +24,7 @@ class SessionManager:
             "player_name": player_name,
             "messages": [],
             "game_state": {},
+            "suggestions": [],
             "turn": 0,
             "created_at": now,
             "updated_at": now,
