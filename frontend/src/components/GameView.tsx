@@ -15,7 +15,7 @@ import SessionList, { sortByUpdatedDesc } from "./SessionList";
 export default function GameView() {
   const [sessions, setSessions] = useState<GameListItem[]>([]);
   const [worlds, setWorlds] = useState<string[]>([]);
-  const [playerName, setPlayerName] = useState("冒险者");
+  const [playerName, setPlayerName] = useState("");
   const [placeholderName, setPlaceholderName] = useState("冒险者");
   const [selectedWorld, setSelectedWorld] = useState("fantasy");
   const [activeSession, setActiveSession] = useState<string | null>(null);
@@ -37,7 +37,6 @@ export default function GameView() {
           ? String((data as Record<string, unknown>).name)
           : "";
         if (name) {
-          setPlayerName(name);
           setPlaceholderName(name);
           defaultNameRef.current = name;
         }
