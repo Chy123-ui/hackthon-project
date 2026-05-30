@@ -26,7 +26,7 @@ export default function TemplateList({
           + New World
         </button>
         <button className="secondary" onClick={onImport}>
-          Import (.txt/.json)
+          Import
         </button>
       </div>
 
