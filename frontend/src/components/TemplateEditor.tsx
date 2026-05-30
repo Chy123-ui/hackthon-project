@@ -29,6 +29,8 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
   const [aiInstruction, setAiInstruction] = useState("");
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [aiHistory, setAiHistory] = useState<string[]>([]);
+  const [aiModifying, setAiModifying] = useState(false);
+  const [aiLoadingSuggestions, setAiLoadingSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modifyExample = useRef(MODIFY_EXAMPLES[Math.floor(Math.random() * MODIFY_EXAMPLES.length)]);
 
@@ -99,12 +101,14 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
   }
 
   async function handleAiAssist() {
-    const instr = aiInstruction.trim();
+    const instr = aiInstruction.trim() || (aiSuggestions.length > 0 ? aiSuggestions[0] : "");
     if (!instr) return;
     setAiInstruction("");
+    setAiModifying(true);
     setStatus("AI is modifying...");
     try {
-      const concept = `Modify ${selectedWorld} world template. Current content: ${fileMap[activeFile].data}. Instruction: ${instr}. Return ONLY the updated YAML in same format.`;
+      const oldContent = fileMap[activeFile].data;
+      const concept = `Modify ${selectedWorld} world template. Current content: ${oldContent}. Instruction: ${instr}. Return ONLY the updated YAML in same format.`;
       const result = await generateWorld(concept);
       setAiHistory((prev) => [...prev.slice(-9), instr]);
       await loadAll();
@@ -113,6 +117,8 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
       setTimeout(() => setStatus(""), 2000);
     } catch (e: unknown) {
       setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setAiModifying(false);
     }
   }
 
@@ -131,18 +137,22 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
           <div style={{
             marginBottom: 16, padding: 16, background: "var(--bg-card)",
             border: "1px solid var(--accent)", borderRadius: "var(--radius)",
+            opacity: aiModifying ? 0.6 : 1, pointerEvents: aiModifying ? "none" : "auto",
           }}>
             <h3 style={{ color: "var(--accent)", fontSize: 14, marginBottom: 8 }}>
-              AI Modify "{selectedWorld}"
+              AI Modify "{selectedWorld}" {aiModifying && <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>— working...</span>}
             </h3>
             <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>
               Describe what changes you want. AI will modify the current template.
             </p>
 
+            {aiLoadingSuggestions && (
+              <p style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 8 }}>Loading suggestions...</p>
+            )}
             {aiSuggestions.length > 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
                 {aiSuggestions.map((s, i) => (
-                  <span key={i} onClick={() => setAiInstruction(s)}
+                  <span key={i} onClick={() => { setAiInstruction(s); handleAiAssist(); }}
                     style={{ padding: "4px 8px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 4, cursor: "pointer", fontSize: 12, color: "var(--text)" }}>
                     {s}
                   </span>
@@ -159,18 +169,23 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
                     e.preventDefault();
                     const txt = aiInstruction.trim();
                     if (txt) { handleAiAssist(); }
+                    else if (aiSuggestions.length > 0) { setAiInstruction(aiSuggestions[0]); handleAiAssist(); }
                     else { setAiInstruction(modifyExample.current); }
                   }
                 }}
-                placeholder={`e.g. "${modifyExample.current}"`}
+                disabled={aiModifying}
+                placeholder={aiSuggestions.length > 0 ? "Type or click a suggestion above" : `e.g. "${modifyExample.current}"`}
                 style={{
                   flex: 1, padding: "10px 14px", background: "var(--bg-input)",
                   border: "1px solid var(--border)", borderRadius: "var(--radius)",
                   color: "var(--text)", fontSize: 14,
                 }}
               />
-              <button className="primary" onClick={handleAiAssist}>Modify</button>
-              <button className="secondary" onClick={() => { setShowAiAssist(false); setAiInstruction(""); setAiSuggestions([]); }}>Cancel</button>
+              <button className="primary" onClick={handleAiAssist} disabled={aiModifying}>
+                {aiModifying ? "Modifying..." : "Modify"}
+              </button>
+              <button className="secondary" onClick={() => { setShowAiAssist(false); setAiInstruction(""); setAiSuggestions([]); }}
+                disabled={aiModifying}>Cancel</button>
             </div>
 
             {aiHistory.length > 0 && (
@@ -192,7 +207,11 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
           preview={preview} onSave={handleSave} saving={saving} status={status}
           onAiAssist={() => {
             setShowAiAssist(true);
-            getModifySuggestions(selectedWorld).then((r) => setAiSuggestions(r.suggestions)).catch(() => {});
+            setAiLoadingSuggestions(true);
+            getModifySuggestions(selectedWorld).then((r) => {
+              setAiSuggestions(r.suggestions);
+              setAiLoadingSuggestions(false);
+            }).catch(() => setAiLoadingSuggestions(false));
           }}
         />
       </div>
