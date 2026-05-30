@@ -47,21 +47,24 @@ jobs:
         with:
           python-version: '3.10'
       - run: |
-          pip install pyinstaller
-          pip install -r backend/requirements.txt
+          python -m venv release\re-life\.venv
+          release\re-life\.venv\Scripts\pip install -r backend\requirements.txt
       - run: |
-          cd backend
-          pyinstaller --onefile `
-            --add-data "protocol;protocol" `
-            --add-data "default_worlds;default_worlds" `
-            --add-data "../frontend/dist;dist" `
-            --name "re-life" `
-            launcher.py
-          mkdir ../release
-          move dist/re-life.exe ../release/
+          mkdir release\re-life\data
+          xcopy backend\app release\re-life\app /E /I
+          xcopy backend\protocol release\re-life\protocol /E /I
+          xcopy backend\default_worlds release\re-life\default_worlds /E /I
+          xcopy frontend\dist release\re-life\dist /E /I
+          copy backend\run.py release\re-life\run.py
+      - run: |
+          echo @echo off > release\re-life\start.bat
+          echo cd /d "%%~dp0" >> release\re-life\start.bat
+          echo start "" http://localhost:8000 >> release\re-life\start.bat
+          echo .venv\Scripts\python run.py >> release\re-life\start.bat
+      - run: Compress-Archive -Path release\re-life -DestinationPath release\re-life.zip
       - uses: softprops/action-gh-release@v2
         with:
-          files: release/re-life.exe
+          files: release/re-life.zip
           tag_name: latest
           name: Latest Build
           body: Auto-built from ${{ github.sha }}

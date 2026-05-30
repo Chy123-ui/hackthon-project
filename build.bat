@@ -3,11 +3,12 @@ chcp 65001 >nul
 
 set "ROOT=%~dp0"
 set "BUILD_DIR=%ROOT%build"
+set "OUT_DIR=%BUILD_DIR%\re-life"
 set "BACKEND_DIR=%ROOT%backend"
 set "FRONTEND_DIR=%ROOT%frontend"
 
 echo ============================================
-echo  re:life - Build EXE
+echo  re:life - Build
 echo ============================================
 echo.
 
@@ -16,29 +17,34 @@ cd /d "%FRONTEND_DIR%"
 cmd /c "npm run build" >nul 2>&1
 if errorlevel 1 ( echo Frontend build failed & exit /b 1 )
 
-echo [2/4] Cleaning build dir...
+echo [2/4] Clearing build dir...
 rmdir /S /Q "%BUILD_DIR%" 2>nul
-mkdir "%BUILD_DIR%"
+mkdir "%OUT_DIR%"
+mkdir "%OUT_DIR%\data"
 
-echo [3/4] Installing PyInstaller...
+echo [3/4] Preparing Python deps...
 cd /d "%BACKEND_DIR%"
 if not exist ".venv\Scripts\python.exe" (
     python -m venv .venv
 )
-.venv\Scripts\pip install -q pyinstaller
+.venv\Scripts\pip install -q -r requirements.txt
 
-echo [4/4] Building EXE (this will take a few minutes)...
-.venv\Scripts\pyinstaller --onefile ^
-  --add-data "%BACKEND_DIR%\protocol;protocol" ^
-  --add-data "%BACKEND_DIR%\default_worlds;default_worlds" ^
-  --add-data "%FRONTEND_DIR%\dist;dist" ^
-  --distpath "%BUILD_DIR%" ^
-  --workpath "%BUILD_DIR%\tmp" ^
-  --name "re-life" ^
-  "%BACKEND_DIR%\launcher.py"
+echo [4/4] Copying files...
+robocopy ".venv" "%OUT_DIR%\.venv" /E /NFL /NDL /NJH /NJS >nul
+robocopy "app" "%OUT_DIR%\app" /E /NFL /NDL /NJH /NJS >nul
+robocopy "protocol" "%OUT_DIR%\protocol" /E /NFL /NDL /NJH /NJS >nul
+robocopy "default_worlds" "%OUT_DIR%\default_worlds" /E /NFL /NDL /NJH /NJS >nul
+robocopy "%FRONTEND_DIR%\dist" "%OUT_DIR%\dist" /E /NFL /NDL /NJH /NJS >nul
+
+echo @echo off > "%OUT_DIR%\start.bat"
+echo cd /d "%%~dp0" >> "%OUT_DIR%\start.bat"
+echo start "" http://localhost:8000 >> "%OUT_DIR%\start.bat"
+echo .venv\Scripts\python run.py >> "%OUT_DIR%\start.bat"
+copy "%BACKEND_DIR%\run.py" "%OUT_DIR%\run.py" >nul
 
 echo.
 echo ============================================
-echo   Build complete: build/re-life.exe
+echo   Build complete: build/re-life/
+echo   Distribute this folder, user clicks start.bat
 echo ============================================
 pause
