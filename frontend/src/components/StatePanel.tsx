@@ -2,12 +2,14 @@ interface Props {
   suggestions: string[];
   gameState: Record<string, unknown>;
   onSuggestionClick: (text: string) => void;
+  onSuggestionSend: (text: string) => void;
 }
 
 export default function StatePanel({
   suggestions,
   gameState,
   onSuggestionClick,
+  onSuggestionSend,
 }: Props) {
   if (suggestions.length === 0 && Object.keys(gameState).length === 0) {
     return null;
@@ -33,6 +35,7 @@ export default function StatePanel({
             <div
               key={i}
               onClick={() => onSuggestionClick(s)}
+              onDoubleClick={() => onSuggestionSend(s)}
               style={{
                 padding: "6px 8px",
                 marginBottom: 4,

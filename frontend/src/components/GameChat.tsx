@@ -48,8 +48,8 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
     }
   }
 
-  async function handleSend() {
-    const action = input.trim();
+  async function handleSend(directAction?: string) {
+    const action = (directAction ?? input).trim();
     if (!action || loading) return;
     setInput("");
     setLoading(true);
@@ -136,6 +136,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
           suggestions={suggestions}
           gameState={gameState}
           onSuggestionClick={setInput}
+          onSuggestionSend={(text) => handleSend(text)}
         />
       </div>
 
