@@ -1,13 +1,15 @@
 @echo off
-echo ============================================
-echo  AI WenYou - Build EXE
-echo ============================================
-echo.
+chcp 65001 >nul
 
 set "ROOT=%~dp0"
 set "BUILD_DIR=%ROOT%build"
 set "BACKEND_DIR=%ROOT%backend"
 set "FRONTEND_DIR=%ROOT%frontend"
+
+echo ============================================
+echo  re:life - Build EXE
+echo ============================================
+echo.
 
 echo [1/4] Building frontend...
 cd /d "%FRONTEND_DIR%"
@@ -25,18 +27,17 @@ if not exist ".venv\Scripts\python.exe" (
 )
 .venv\Scripts\pip install -q pyinstaller
 
-echo [4/4] Building EXE...
+echo [4/4] Building EXE (this will take a few minutes)...
 .venv\Scripts\pyinstaller --onefile --noconsole ^
   --add-data "protocol;protocol" ^
   --add-data "default_worlds;default_worlds" ^
   --add-data "%FRONTEND_DIR%\dist;dist" ^
   --distpath "%BUILD_DIR%" --workpath "%BUILD_DIR%\tmp" --specpath "%BUILD_DIR%\tmp" ^
-  --name "AI文游" ^
+  --name "re-life" ^
   launcher.py
 
 echo.
 echo ============================================
-echo   Build complete: build/AI文游.exe
+echo   Build complete: build/re-life.exe
 echo ============================================
-echo   Distribute this exe with protocol/ default_worlds/ dist/ folders.
 pause
