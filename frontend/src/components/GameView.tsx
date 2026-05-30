@@ -19,6 +19,7 @@ export default function GameView() {
   const [placeholderName, setPlaceholderName] = useState("冒险者");
   const [selectedWorld, setSelectedWorld] = useState("fantasy");
   const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [activePlayerName, setActivePlayerName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -62,12 +63,11 @@ export default function GameView() {
     try {
       setLoading(true);
       setError("");
-      const { game_id } = await newGame(
-        selectedWorld,
-        playerName.trim() || defaultNameRef.current
-      );
+      const name = playerName.trim() || defaultNameRef.current;
+      const { game_id } = await newGame(selectedWorld, name);
       await startGame(game_id);
       setActiveSession(game_id);
+      setActivePlayerName(name);
       await loadAll();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -97,9 +97,10 @@ export default function GameView() {
     return (
       <GameChat
         gameId={activeSession}
-        playerName={playerName}
+        playerName={activePlayerName}
         onBack={() => {
           setActiveSession(null);
+          setActivePlayerName("");
           loadAll();
         }}
       />
