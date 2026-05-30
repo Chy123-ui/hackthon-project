@@ -16,6 +16,8 @@ def _build_extra(w: dict, p: dict, pref: dict) -> str:
         if extras:
             for k, v in extras.items():
                 lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
+    if lines:
+        lines.append("  以上字段在 state 中使用时，key 用英文，label 用中文展示。")
     return "\n".join(lines) if lines else "无"
 
 

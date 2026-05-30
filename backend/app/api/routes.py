@@ -270,7 +270,7 @@ async def modify_world(world: str, body: dict):
     )
 
     try:
-        result = await llm_client.chat([{"role": "user", "content": prompt}])
+        result = await llm_client.chat([{"role": "user", "content": prompt}], max_tokens=settings.gen_max_tokens)
         raw = result["choices"][0]["message"]["content"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
@@ -305,7 +305,7 @@ async def get_modify_suggestions(world: str):
         result = await llm_client.chat([{
             "role": "user",
             "content": f"You are a creative writing assistant. Given this world template summary:\n{summary}\n\nSuggest 5 specific, diverse modification ideas for this world. Return them as a comma-separated list only, no other text."
-        }])
+        }], max_tokens=settings.gen_max_tokens)
         raw = result["choices"][0]["message"]["content"]
         suggestions = [s.strip() for s in raw.split(",") if s.strip()]
         return {"suggestions": suggestions[:5]}
@@ -405,7 +405,7 @@ async def import_world(body: dict):
     try:
         result = await llm_client.chat([
             {"role": "user", "content": IMPORT_PROMPT.format(content=content[:8000])}
-        ])
+        ], max_tokens=settings.gen_max_tokens)
         raw = result["choices"][0]["message"]["content"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
@@ -495,7 +495,7 @@ async def generate_world(body: dict):
     try:
         result = await llm_client.chat([
             {"role": "user", "content": WORLD_GEN_PROMPT.format(concept=concept)}
-        ])
+        ], max_tokens=settings.gen_max_tokens)
         raw = result["choices"][0]["message"]["content"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")

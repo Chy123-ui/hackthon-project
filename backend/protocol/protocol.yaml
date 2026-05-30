@@ -71,10 +71,11 @@ protocol: |
   flags: {{}}           <-- 错误！
   
   每种操作的使用方法：
-  - <set key="x">value</set>    单值覆盖（如 位置、生命值）
-  - <add key="x" value="v"/>    列表追加（如 背包、任务）
-  - <del key="x"/>              删除某个键
-  所有键名必须中文。flags 允许存英文值但显示中文：<add key="flags" value="found_tavern" label="到访酒馆"/>
+  - <set key="x">value</set>    单值覆盖。支持 label: <set key="knowledge" label="学识">8</set>
+  - <add key="x" value="v"/>    列表追加
+  - <add key="x" value="v" label="中文名"/>    key 存英文，label 存中文
+  - <del key="x"/>              删除
+  所有 key 使用英文存储，label 用中文展示。前端只显示 label 不显示 key。
   - <del key="x"/>              删除某个键
   状态键推荐使用中文命名。flags 等集合型 key 允许存英文值，
   但必须同时提供中文 label 用于展示。
