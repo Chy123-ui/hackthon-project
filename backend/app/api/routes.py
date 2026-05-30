@@ -2,6 +2,7 @@
 import json
 import io
 import re
+import yaml
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from ..core.config import settings
@@ -217,6 +218,27 @@ detail_level: 细节程度
 {content}"""
 
 
+def _parse_json_export(content: str) -> dict | None:
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict) or "world" not in data:
+        return None
+    w = data["world"]
+    name = (w.get("name") or "imported").strip()
+    if not name:
+        return None
+    world_name = re.sub(r"[^a-z0-9_]", "_", name.lower())[:30]
+    files = {}
+    files["world.yaml"] = yaml.dump(data["world"], allow_unicode=True)
+    if "player" in data:
+        files["player.yaml"] = yaml.dump(data["player"], allow_unicode=True)
+    if "preferences" in data:
+        files["preferences.yaml"] = yaml.dump(data["preferences"], allow_unicode=True)
+    return {"name": world_name, "files": files}
+
+
 def _extract_docx(raw: bytes) -> str:
     import zipfile
     import xml.etree.ElementTree as ET
@@ -263,6 +285,11 @@ async def import_world(body: dict):
 
     if not content.strip():
         raise HTTPException(status_code=400, detail="No parseable content")
+
+    parsed_json = _parse_json_export(content)
+    if parsed_json:
+        _save_world_files(parsed_json["name"], parsed_json["files"])
+        return {"world": parsed_json["name"], "files": list(parsed_json["files"].keys()), "source": "json"}
 
     detected_name = re.search(r"^name:\s*(\S+)", content, re.MULTILINE)
 
