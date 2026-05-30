@@ -4,6 +4,7 @@ import { getGameHistory, sendActionStream } from "../services/api";
 import { StreamDisplay } from "../hooks/useGameStream";
 import ChatMessage from "./ChatMessage";
 import StatePanel from "./StatePanel";
+import SuggestionBar from "./SuggestionBar";
 import { useTypewriter } from "../hooks/useTypewriter";
 
 interface Props {
@@ -151,15 +152,17 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
           <div ref={messagesEndRef} />
         </div>
 
-        <StatePanel
-          suggestions={suggestions}
-          gameState={gameState}
-          onSuggestionClick={setInput}
-          onSuggestionSend={(text) => handleSend(text)}
-        />
+        <StatePanel gameState={gameState} />
       </div>
 
       {error && <ErrorBanner message={error} />}
+
+      <SuggestionBar
+        suggestions={suggestions}
+        loading={loading}
+        onClick={setInput}
+        onSend={(text) => handleSend(text)}
+      />
 
       <ChatInput
         value={input}

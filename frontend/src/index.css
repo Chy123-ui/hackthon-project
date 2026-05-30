@@ -1,4 +1,12 @@
 :root {
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --radius: 8px;
+}
+
+/* Dark Mode (default) */
+:root,
+[data-theme="dark"] {
   --bg: #0f0f14;
   --bg-secondary: #1a1a24;
   --bg-card: #222230;
@@ -13,15 +21,55 @@
   --success: #5ac46d;
   --player-bubble: #2d3559;
   --gm-bubble: #2a2a3a;
-  --font-mono: "JetBrains Mono", "Fira Code", monospace;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --radius: 8px;
+  --dialogue: #e2b96f;
+  --thought-bg: rgba(124, 92, 191, 0.06);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --glass-bg: rgba(26, 26, 36, 0.78);
+}
+
+/* Light Mode */
+[data-theme="light"] {
+  --bg: #f5f0e8;
+  --bg-secondary: #ece5da;
+  --bg-card: #faf7f1;
+  --bg-input: #f0ebe2;
+  --text: #4a3728;
+  --text-secondary: #8c7b6e;
+  --accent: #b8835a;
+  --accent-hover: #9e6e48;
+  --accent-glow: rgba(184, 131, 90, 0.18);
+  --border: #e0d7c8;
+  --danger: #c45a5a;
+  --success: #5a9d6b;
+  --player-bubble: #ede4d8;
+  --gm-bubble: #e8e2da;
+  --dialogue: #b8753a;
+  --thought-bg: rgba(184, 131, 90, 0.06);
+  --shadow: 0 2px 8px rgba(74, 55, 40, 0.08);
+  --glass-bg: rgba(236, 229, 218, 0.78);
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html {
+  transition: background-color 0.3s ease;
+}
+
+[data-theme] *,
+[data-theme] *::before,
+[data-theme] *::after {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Exclude animation elements from color transition */
+[data-theme] .typing-cursor,
+[data-theme] .suggestion-card.entering,
+[data-theme] .suggestion-card.leaving {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.25s, transform 0.3s;
 }
 
 body {
@@ -51,7 +99,9 @@ body {
   gap: 0;
   border-bottom: 1px solid var(--border);
   padding: 0 16px;
-  background: var(--bg-secondary);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .tab-btn {
@@ -193,7 +243,9 @@ button:disabled {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: var(--bg-secondary);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
 
@@ -516,7 +568,7 @@ button.danger:hover {
   padding: 8px 10px;
   font-size: 12px;
   color: var(--text-secondary);
-  background: rgba(124, 92, 191, 0.06);
+  background: var(--thought-bg);
   line-height: 1.5;
   font-style: italic;
   white-space: pre-wrap;
@@ -528,7 +580,7 @@ button.danger:hover {
 }
 
 .dialogue {
-  color: #e2b96f;
+  color: var(--dialogue);
   font-weight: 500;
 }
 
@@ -549,6 +601,43 @@ button.danger:hover {
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+/* ---- State Panel (glass sidebar) ---- */
+
+.state-panel {
+  width: 240px;
+  padding: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+.state-panel-title {
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.state-panel-item {
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  background: var(--bg-card);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.state-panel-key {
+  color: var(--text-secondary);
+}
+
+.state-panel-value {
+  color: var(--text);
 }
 
 /* ---- Confirm Dialog ---- */
@@ -588,4 +677,81 @@ button.danger:hover {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+/* ---- Suggestion Bar ---- */
+
+.suggestion-bar {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.suggestion-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.suggestion-bar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.suggestion-card {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.25s, border-color 0.2s;
+  user-select: none;
+}
+
+.suggestion-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.suggestion-card.dimmed {
+  opacity: 0.4;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.suggestion-card.entering {
+  animation: fade-in 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+.suggestion-card.leaving {
+  animation: fade-out 0.25s ease-in forwards;
 }

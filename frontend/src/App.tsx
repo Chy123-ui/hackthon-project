@@ -3,6 +3,7 @@ import GameView from "./components/GameView";
 import HistoryView from "./components/HistoryView";
 import TemplateEditor from "./components/TemplateEditor";
 import SettingsPanel from "./components/SettingsPanel";
+import { useTheme } from "./context/ThemeContext";
 import "./App.css";
 
 type Tab = "game" | "history" | "templates" | "settings";
@@ -10,6 +11,7 @@ type Tab = "game" | "history" | "templates" | "settings";
 function App() {
   const [tab, setTab] = useState<Tab>("game");
   const [gameKey, setGameKey] = useState(0);
+  const { theme, toggleTheme } = useTheme();
 
   function handleTabClick(id: Tab) {
     if (id === "game" && tab === "game") {
@@ -38,6 +40,14 @@ function App() {
             {t.label}
           </button>
         ))}
+        <button
+          className="tab-btn theme-toggle"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          style={{ marginLeft: "auto" }}
+        >
+          {theme === "dark" ? "☀️" : "🌙"}
+        </button>
       </div>
 
       <div className="tab-content">
