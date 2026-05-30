@@ -6,6 +6,13 @@ interface Props {
   onImport: () => void;
   onExport: (world: string) => void;
   onDelete: (world: string) => void;
+  multiSelect?: boolean;
+  selected?: Set<string>;
+  onSelectToggle?: (world: string) => void;
+  onToggleMulti?: () => void;
+  multiMode?: boolean;
+  selectedCount?: number;
+  onBulkDelete?: () => void;
 }
 
 export default function TemplateList({
@@ -16,6 +23,13 @@ export default function TemplateList({
   onImport,
   onExport,
   onDelete,
+  multiSelect,
+  selected,
+  onSelectToggle,
+  onToggleMulti,
+  multiMode,
+  selectedCount = 0,
+  onBulkDelete,
 }: Props) {
   return (
     <div style={{ padding: 16, flex: 1, overflowY: "auto" }}>
@@ -30,7 +44,27 @@ export default function TemplateList({
         <button className="secondary" onClick={onImport}>
           Import
         </button>
+        <button className="secondary" onClick={onToggleMulti}>
+          {multiMode ? "Cancel" : "Select"}
+        </button>
       </div>
+
+      {multiMode && selectedCount > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "10px 16px", marginBottom: 12,
+          background: "rgba(124,92,191,0.1)",
+          border: "1px solid var(--accent)", borderRadius: "var(--radius)",
+        }}>
+          <span style={{ fontSize: 13, color: "var(--accent)" }}>
+            {selectedCount} selected
+          </span>
+          <div style={{ flex: 1 }} />
+          <button className="danger" onClick={onBulkDelete} style={{ fontSize: 13 }}>
+            Delete Selected
+          </button>
+        </div>
+      )}
 
       {worlds.length === 0 && (
         <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
@@ -47,20 +81,30 @@ export default function TemplateList({
               background: w === selectedWorld ? "rgba(124,92,191,0.1)" : "var(--bg-card)",
               border: w === selectedWorld ? "1px solid var(--accent)" : "1px solid var(--border)",
               borderRadius: "var(--radius)",
-              cursor: "pointer",
               transition: "all 0.2s",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
             }}
           >
-            <div onClick={() => onSelect(w)} style={{ flex: 1 }}>
-              <h3 style={{ fontSize: 16, color: "var(--text)", marginBottom: 4 }}>
-                {w}
-              </h3>
-              <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                world / player / preferences
-              </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+              {multiSelect && selected && onSelectToggle && (
+                <input
+                  type="checkbox"
+                  checked={selected.has(w)}
+                  onChange={() => onSelectToggle(w)}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--accent)" }}
+                />
+              )}
+              <div onClick={() => onSelect(w)} style={{ flex: 1, cursor: "pointer" }}>
+                <h3 style={{ fontSize: 16, color: "var(--text)", marginBottom: 4 }}>
+                  {w}
+                </h3>
+                <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                  world / player / preferences
+                </p>
+              </div>
             </div>
             <div style={{ display: "flex", gap: 6 }}>
               <button

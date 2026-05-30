@@ -14,6 +14,8 @@ export default function HistoryView({ searchQuery = "" }: Props) {
   const [activeSession, setActiveSession] = useState<GameListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [multiMode, setMultiMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadSessions();
@@ -46,6 +48,29 @@ export default function HistoryView({ searchQuery = "" }: Props) {
     }
   }
 
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    if (selected.size === 0) return;
+    try {
+      for (const id of selected) {
+        await deleteGame(id);
+      }
+      setSelected(new Set());
+      setMultiMode(false);
+      await loadSessions();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
   if (activeSession) {
     return (
       <GameChat
@@ -62,8 +87,13 @@ export default function HistoryView({ searchQuery = "" }: Props) {
   const visibleSessions = filterSessions(sessions, searchQuery);
 
   return (
-    <div className="game-sessions">
-      <h2>History</h2>
+    <div style={{ padding: 32, overflowY: "auto", maxWidth: 700, margin: "0 auto", width: "100%" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h2 style={{ color: "var(--accent)", fontSize: 24, margin: 0 }}>History</h2>
+        <button className="secondary" onClick={() => { setMultiMode(!multiMode); setSelected(new Set()); }}>
+          {multiMode ? "Cancel" : "Select"}
+        </button>
+      </div>
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -74,23 +104,41 @@ export default function HistoryView({ searchQuery = "" }: Props) {
         />
       )}
 
+      {multiMode && selected.size > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "10px 16px", marginBottom: 12,
+          background: "rgba(124,92,191,0.1)",
+          border: "1px solid var(--accent)", borderRadius: "var(--radius)",
+        }}>
+          <span style={{ fontSize: 13, color: "var(--accent)" }}>
+            {selected.size} selected
+          </span>
+          <div style={{ flex: 1 }} />
+          <button className="danger" onClick={handleBulkDelete} style={{ fontSize: 13 }}>
+            Delete Selected
+          </button>
+        </div>
+      )}
+
       {visibleSessions.length > 0 && (
-        <>
-          <h3
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: 14,
-              marginBottom: 8,
-            }}
-          >
-            All Stories
-          </h3>
-          <SessionList
-            sessions={visibleSessions}
-            onOpen={setActiveSession}
-            onDelete={handleDelete}
-          />
-        </>
+        <SessionList
+          sessions={visibleSessions}
+          onOpen={(session) => {
+            if (multiMode) return;
+            setActiveSession(session);
+          }}
+          onDelete={handleDelete}
+          multiSelect={multiMode}
+          selected={selected}
+          onSelectToggle={toggleSelect}
+        />
+      )}
+
+      {visibleSessions.length === 0 && (
+        <p style={{ color: "var(--text-secondary)", fontSize: 14, textAlign: "center", padding: 40 }}>
+          No stories found.
+        </p>
       )}
     </div>
   );

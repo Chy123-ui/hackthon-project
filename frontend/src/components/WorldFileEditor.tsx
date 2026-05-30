@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 type WorldFile = "world" | "player" | "preferences";
 
@@ -24,13 +24,15 @@ export default function WorldFileEditor({
   fileData, onFileDataChange, preview, onSave, saving, status, onAiAssist,
 }: Props) {
   const [fullscreen, setFullscreen] = useState<"edit" | "preview" | null>(null);
-  const editRef = useRef<HTMLTextAreaElement>(null);
-  const previewRef = useRef<HTMLTextAreaElement>(null);
 
-  function autoResize(ref: React.RefObject<HTMLTextAreaElement | null>) {
-    const el = ref.current;
-    if (el) { el.style.height = "auto"; el.style.height = `${Math.max(300, el.scrollHeight)}px`; }
-  }
+  useEffect(() => {
+    if (!fullscreen) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setFullscreen(null);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [fullscreen]);
 
   if (fullscreen === "edit") {
     return (
@@ -40,9 +42,8 @@ export default function WorldFileEditor({
           <button className="secondary" onClick={() => setFullscreen(null)}>Close</button>
         </div>
         <textarea
-          ref={editRef}
           value={fileData}
-          onChange={(e) => { onFileDataChange(e.target.value); autoResize(editRef); }}
+          onChange={(e) => onFileDataChange(e.target.value)}
           style={{ flex: 1, padding: 12, background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 14, resize: "none" }}
         />
       </div>
@@ -62,10 +63,9 @@ export default function WorldFileEditor({
   }
 
   return (
-    <div>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-        <select value={selectedWorld} onChange={(e) => onSelectWorld(e.target.value)}
-          style={{ padding: "8px 12px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: 14, minWidth: 150 }}>
+        <select className="world-select" value={selectedWorld} onChange={(e) => onSelectWorld(e.target.value)}>
           {worlds.map((w) => <option key={w} value={w}>{w}</option>)}
         </select>
         {fileLabels.map((f) => (
@@ -83,9 +83,8 @@ export default function WorldFileEditor({
             <h3>{activeFile}.yaml</h3>
             <button className="secondary" onClick={() => setFullscreen("edit")} style={{ fontSize: 11, padding: "2px 8px" }}>Full</button>
           </div>
-          <textarea ref={editRef} value={fileData}
-            onChange={(e) => { onFileDataChange(e.target.value); autoResize(editRef); }}
-            onFocus={() => autoResize(editRef)}
+          <textarea value={fileData}
+            onChange={(e) => onFileDataChange(e.target.value)}
             style={{ padding: 12, background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13, resize: "none", overflowY: "auto" }}
           />
         </div>
@@ -94,8 +93,7 @@ export default function WorldFileEditor({
             <h3>System Prompt Preview</h3>
             <button className="secondary" onClick={() => setFullscreen("preview")} style={{ fontSize: 11, padding: "2px 8px" }}>Full</button>
           </div>
-          <textarea ref={previewRef} readOnly value={preview}
-            onFocus={() => autoResize(previewRef)}
+          <textarea readOnly value={preview}
             style={{ padding: 12, background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13, resize: "none", overflowY: "auto" }}
           />
         </div>

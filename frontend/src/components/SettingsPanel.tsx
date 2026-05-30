@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import type { Config } from "../services/api";
 import { getConfig, updateConfig } from "../services/api";
 
-export default function SettingsPanel() {
+interface Props {
+  searchQuery?: string;
+}
+
+export default function SettingsPanel({ searchQuery = "" }: Props) {
   const [config, setConfig] = useState<Config>({});
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
@@ -30,6 +34,17 @@ export default function SettingsPanel() {
     }
   }
 
+  const fields: { key: keyof Config; label: string; type: string; placeholder: string }[] = [
+    { key: "api_key", label: "API Key", type: "password", placeholder: "sk-..." },
+    { key: "base_url", label: "Base URL", type: "text", placeholder: "https://api.openai.com/v1" },
+    { key: "model", label: "Model", type: "text", placeholder: "gpt-4o" },
+    { key: "max_tokens", label: "Max Tokens", type: "number", placeholder: "4096" },
+    { key: "temperature", label: "Temperature", type: "number", placeholder: "0.8" },
+  ];
+
+  const kw = searchQuery.trim().toLowerCase();
+  const visibleFields = kw ? fields.filter((f) => f.label.toLowerCase().includes(kw) || f.key.toLowerCase().includes(kw)) : fields;
+
   return (
     <div className="settings-view">
       <h2>Settings</h2>
@@ -50,62 +65,24 @@ export default function SettingsPanel() {
         </div>
       )}
 
-      <div className="form-group">
-        <label>API Key</label>
-        <input
-          type="password"
-          placeholder="sk-..."
-          value={config.api_key ?? ""}
-          onChange={(e) => setConfig({ ...config, api_key: e.target.value })}
-        />
-      </div>
+      {visibleFields.length === 0 && (
+        <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>No matching settings found.</p>
+      )}
 
-      <div className="form-group">
-        <label>Base URL</label>
-        <input
-          type="text"
-          placeholder="https://api.openai.com/v1"
-          value={config.base_url ?? ""}
-          onChange={(e) => setConfig({ ...config, base_url: e.target.value })}
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Model</label>
-        <input
-          type="text"
-          placeholder="gpt-4o"
-          value={config.model ?? ""}
-          onChange={(e) => setConfig({ ...config, model: e.target.value })}
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Max Tokens</label>
-        <input
-          type="number"
-          placeholder="4096"
-          value={config.max_tokens ?? ""}
-          onChange={(e) =>
-            setConfig({ ...config, max_tokens: e.target.value ? Number(e.target.value) : undefined })
-          }
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Temperature</label>
-        <input
-          type="number"
-          step="0.1"
-          min="0"
-          max="2"
-          placeholder="0.8"
-          value={config.temperature ?? ""}
-          onChange={(e) =>
-            setConfig({ ...config, temperature: e.target.value ? Number(e.target.value) : undefined })
-          }
-        />
-      </div>
+      {visibleFields.map((f) => (
+        <div className="form-group" key={f.key}>
+          <label>{f.label}</label>
+          <input
+            type={f.type}
+            placeholder={f.placeholder}
+            value={String(config[f.key] ?? "")}
+            onChange={(e) => {
+              const v = e.target.value;
+              setConfig({ ...config, [f.key]: f.key === "max_tokens" || f.key === "temperature" ? (v ? Number(v) : undefined) : v });
+            }}
+          />
+        </div>
+      ))}
 
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button className="primary" onClick={handleSave} disabled={saving}>

@@ -31,6 +31,8 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
   const [aiHistory, setAiHistory] = useState<string[]>([]);
   const [aiModifying, setAiModifying] = useState(false);
   const [aiLoadingSuggestions, setAiLoadingSuggestions] = useState(false);
+  const [multiMode, setMultiMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => void loadAll(), []);
@@ -214,6 +216,31 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
     );
   }
 
+  function toggleSelect(w: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(w)) next.delete(w);
+      else next.add(w);
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    if (selected.size === 0) return;
+    try {
+      for (const w of selected) {
+        await deleteWorld(w);
+      }
+      setSelected(new Set());
+      setMultiMode(false);
+      setStatus("deleted");
+      setTimeout(() => setStatus(""), 2000);
+      await loadAll();
+    } catch (e: unknown) {
+      setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+    }
+  }
+
   /* ---- list view ---- */
   const keyword = searchQuery.trim().toLowerCase();
   const visibleWorlds = keyword ? worlds.filter((w) => w.toLowerCase().includes(keyword)) : worlds;
@@ -225,6 +252,13 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
         onSelect={openEditor} onNewWorld={() => setShowNewWorld(true)}
         onImport={() => fileInputRef.current?.click()} onExport={handleExport}
         onDelete={async (w) => { try { await deleteWorld(w); setStatus("deleted"); setTimeout(() => setStatus(""), 2000); await loadAll(); } catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); } }}
+        multiSelect={multiMode}
+        selected={selected}
+        onSelectToggle={toggleSelect}
+        onToggleMulti={() => { setMultiMode(!multiMode); setSelected(new Set()); }}
+        multiMode={multiMode}
+        selectedCount={selected.size}
+        onBulkDelete={handleBulkDelete}
       />
       {showNewWorld && <NewWorldDialog onCreated={(w) => { setShowNewWorld(false); loadAll().then(() => openEditor(w)); }} onError={(msg) => setStatus("error: " + msg)} />}
       <input ref={fileInputRef} type="file" accept=".txt,.json,.yaml,.md,.docx,.doc" style={{ display: "none" }} onChange={handleImport} />

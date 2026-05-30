@@ -71,7 +71,7 @@ function App() {
         {tab === "game" && <GameView key={gameKey} searchQuery={historySearch} />}
         {tab === "history" && <HistoryView key={historyKey} searchQuery={historySearch} />}
         {tab === "templates" && <TemplateEditor key={templatesKey} searchQuery={historySearch} />}
-        {tab === "settings" && <SettingsPanel key={settingsKey} />}
+        {tab === "settings" && <SettingsPanel key={settingsKey} searchQuery={historySearch} />}
       </div>
     </div>
   );
