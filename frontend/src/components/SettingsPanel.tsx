@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Config } from "../services/api";
 import { getConfig, updateConfig } from "../services/api";
+import CustomSelect from "./CustomSelect";
 
 interface Props {
   searchQuery?: string;
@@ -100,15 +101,12 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
 
       <div className="form-group">
         <label>{sugs.label}</label>
-        <select
+        <CustomSelect
           value={String(config.suggestions_mode || "on")}
-          onChange={(e) => setConfig({ ...config, suggestions_mode: e.target.value })}
+          onChange={(v) => setConfig({ ...config, suggestions_mode: v })}
+          options={Object.keys(sugs.options)}
           className="world-select"
-        >
-          {Object.entries(sugs.options).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))}
-        </select>
+        />
       </div>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
