@@ -67,7 +67,20 @@ export default function StatePanel({ gameState }: Props) {
           <span className="state-panel-count">{stateCount}</span>
         </div>
         {Object.entries(gameState).map(([key, value]) => {
-          const text = Array.isArray(value) ? value.join(", ") : String(value);
+          const text = (() => {
+            if (Array.isArray(value)) {
+              return value.map((v: unknown) => {
+                if (v && typeof v === "object" && "label" in (v as Record<string, unknown>)) {
+                  return (v as Record<string, unknown>).label;
+                }
+                return String(v);
+              }).join(", ");
+            }
+            if (value && typeof value === "object" && "label" in (value as Record<string, unknown>)) {
+              return (value as Record<string, unknown>).label as string;
+            }
+            return String(value);
+          })();
           const canCollapse = longKeys.has(key) && !isPinnedKey(key);
           const isCollapsed = collapsedKeys.has(key);
 
