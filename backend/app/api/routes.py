@@ -665,6 +665,8 @@ async def game_action_stream(game_id: str, body: GameAction):
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
         finally:
             if full_reply:
+                print(f"[AI RAW] suggestions tag: {'<suggestions>' in full_reply}  length: {len(full_reply)}")
+                print(f"[AI TAIL] ...{full_reply[-300:]}")
                 truncated = "</narrate>" not in full_reply
                 tape_tag = "truncated" if truncated else "normal"
                 session["messages"].append({"role": "user", "content": body.action, "tape": "normal"})
