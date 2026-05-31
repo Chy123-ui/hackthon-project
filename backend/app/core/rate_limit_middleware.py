@@ -47,6 +47,11 @@ class RateLimitMiddleware:
             await self.app(scope, receive, send)
             return
 
+        method = scope.get("method", "GET")
+        if method == "OPTIONS":
+            await self.app(scope, receive, send)
+            return
+
         path = scope.get("path", "/")
         client_ip = scope.get("client", ("127.0.0.1", 0))[0]
 
