@@ -49,7 +49,6 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
 
     finalizingRef.current = true;
     loadSession().then(() => {
-      console.log("[finalize] releasing:", bufferedSuggestionsRef.current);
       setSuggestions(bufferedSuggestionsRef.current);
       setStreamingText("");
       setDisplayStream("");
@@ -66,7 +65,6 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
       if (withMeta) {
         setGameState(data.game_state || {});
         setSuggestions(data.suggestions || []);
-        console.log("[DEBUG] loaded suggestions:", data.suggestions);
       }
       getGameTokens(gameId).then(setTokens).catch(() => {});
     } catch (e: unknown) {
@@ -105,7 +103,6 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
         if (d) setDisplayStream(d);
       },
       (newSuggestions, newState) => {
-        console.log("[onParsed] suggestions:", newSuggestions);
         bufferedSuggestionsRef.current = newSuggestions;
         setGameState(newState);
       },

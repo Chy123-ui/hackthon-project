@@ -597,7 +597,6 @@ async def start_game(game_id: str):
         raw_reply = result["choices"][0]["message"]["content"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
-    print(f"[RAW] has_suggestions: {'<suggestions>' in raw_reply} | tail: ...{raw_reply[-200:]}", flush=True)
     session["messages"].append({"role": "user", "content": "(游戏开始)", "tape": "normal"})
     session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
     session["turn"] = 1
@@ -666,8 +665,6 @@ async def game_action_stream(game_id: str, body: GameAction):
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
         finally:
             if full_reply:
-                print(f"[AI RAW] suggestions tag: {'<suggestions>' in full_reply}  length: {len(full_reply)}")
-                print(f"[AI TAIL] ...{full_reply[-300:]}")
                 truncated = "</narrate>" not in full_reply
                 tape_tag = "truncated" if truncated else "normal"
                 session["messages"].append({"role": "user", "content": body.action, "tape": "normal"})
