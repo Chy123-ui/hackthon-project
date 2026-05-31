@@ -63,7 +63,7 @@ build.bat
 | 秘钥 | 配置 `data/config.json` gitignore；API Key Fernet 加密落盘；解密失败记录告警 |
 | 输入 | world 参数路径穿越校验；action/concept/instruction 最大长度限制；player_name 正则过滤 |
 | 输出 | LLM 报错返回统一消息，不泄露内部详情；CSP/X-Frame-Options/X-Content-Type-Options 安全头 |
-| 访问 | CORS 白名单；LLM 端点速率限制 (5/min)；.key 文件自动设 600 权限 (Linux) |
+| 访问 | CORS 白名单；LLM 端点速率限制 (60/min)；.key 文件自动设 600 权限 (Linux) |
 | 文件 | 会话/配置/YAML 原子写入 (tmp + rename)；zip bomb 解压上限 50MB；会话读写锁 |
 | CI | bandit (Python SAST) + safety (依赖扫描) + npm audit + ruff lint |
 
@@ -99,4 +99,4 @@ export HTTPS_PROXY=http://127.0.0.1:7890
 
 ### 速率限制 (429 Too Many Requests)
 
-LLM 端点限流 5 次/分钟。等待 60 秒后重试。非 LLM 端点不受此限制。
+LLM 端点 (生成/修改/游戏交互) 限流 60 次/分钟，防止脚本意外刷光额度。非 LLM 端点（读取模板、配置等）不受限。

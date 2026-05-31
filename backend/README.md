@@ -86,7 +86,7 @@ The backend parses `<state>` blocks and persists them into `session.game_state`,
 | API Key encryption | Fernet symmetric, `.key` file auto-chmod 600 |
 | Input validation | Path traversal check, length limits, player_name regex |
 | Error messages | Unified "LLM API request failed", full errors logged only |
-| Rate limiting | LLM endpoints 5/min, default 30/min, IP-based sliding window |
+| Rate limiting | LLM endpoints 60/min (anti-script), non-LLM unlimited |
 | CORS | Whitelist localhost:5173/8000 |
 | Session locking | Per-game read-modify-write lock |
 | Atomic writes | tmp file + rename for config/sessions/YAML |
@@ -113,4 +113,4 @@ pip install pytest pytest-asyncio httpx
 python -m pytest backend/tests/ -v
 ```
 
-66 tests covering security, input validation, error handling, concurrency, and rate limiting.
+69 tests covering security, input validation, error handling, concurrency, and rate limiting.
