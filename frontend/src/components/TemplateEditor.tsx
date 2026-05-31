@@ -8,6 +8,7 @@ import {
 import NewWorldDialog from "./NewWorldDialog";
 import WorldFileEditor from "./WorldFileEditor";
 import TemplateList from "./TemplateList";
+import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 
 type WorldFile = "world" | "player" | "preferences";
 
@@ -33,6 +34,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
   const [aiLoadingSuggestions, setAiLoadingSuggestions] = useState(false);
   const [multiMode, setMultiMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   useEffect(() => void loadAll(), []);
 
@@ -229,6 +231,19 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
     }
   }
 
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    try {
+      await deleteWorld(deleteTarget);
+      setDeleteTarget(null);
+      setStatus("\u5df2\u5220\u9664"); setTimeout(() => setStatus(""), 2000);
+      await loadAll();
+    } catch (e: unknown) {
+      setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e)));
+      setDeleteTarget(null);
+    }
+  }
+
   /* ---- list view ---- */
   const keyword = searchQuery.trim().toLowerCase();
   const visibleWorlds = keyword ? worlds.filter((w) => w.toLowerCase().includes(keyword)) : worlds;
@@ -239,7 +254,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
         worlds={visibleWorlds} selectedWorld={selectedWorld}
         onSelect={openEditor} onNewWorld={() => { setShowNewWorld(true); setShowAiAssist(false); }}
         onExport={handleExport}
-        onDelete={async (w) => { try { await deleteWorld(w); setStatus("\u5df2\u5220\u9664"); setTimeout(() => setStatus(""), 2000); await loadAll(); } catch (e: unknown) { setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e))); } }}
+        onDelete={async (w) => { setDeleteTarget(w); }}
         multiSelect={multiMode}
         selected={selected}
         onSelectToggle={toggleSelect}
@@ -250,6 +265,12 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
         onBulkDelete={handleBulkDelete}
       />
       {showNewWorld && <NewWorldDialog onCreated={(w) => { setShowNewWorld(false); loadAll().then(() => openEditor(w)); }} onError={(msg) => setStatus("\u9519\u8bef: " + msg)} onClose={() => setShowNewWorld(false)} />}
+      {deleteTarget && (
+        <ConfirmDeleteDialog
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
+        />
+      )}
       {status && (
         <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "10px 24px", borderRadius: "var(--radius)", background: status.startsWith("\u9519\u8bef") ? "var(--danger)" : "var(--accent)", color: "#fff", fontSize: 14, fontWeight: 500, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", zIndex: 1000 }}>
           {status}

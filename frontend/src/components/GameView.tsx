@@ -72,17 +72,23 @@ export default function GameView({ searchQuery = "" }: Props) {
   }
 
   async function handleNewGame() {
+    let gameId = "";
     try {
       setLoading(true);
       setError("");
       const name = playerName.trim() || defaultNameRef.current;
       const { game_id } = await newGame(selectedWorld, name);
+      gameId = game_id;
       await startGame(game_id);
       setActiveSession(game_id);
       setActivePlayerName(name);
       await loadAll();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
+      if (gameId) {
+        try { await deleteGame(gameId); } catch {}
+        await loadAll();
+      }
     } finally {
       setLoading(false);
     }
