@@ -179,13 +179,13 @@ class TestPydanticSchemaValidation:
 class TestPlayerNameValidation:
     """2.4: player_name 合法校验"""
 
-    def test_empty_player_name_rejected(self, client):
+    def test_empty_player_name_accepted_as_empty(self, client):
         resp = client.post(
             "/api/game/new",
             json={"world": "fantasy", "player_name": ""},
         )
-        assert resp.status_code == 422, (
-            f"Empty player_name should be rejected, got {resp.status_code}"
+        assert resp.status_code == 200, (
+            f"Empty player_name should be accepted (stored as empty), got {resp.status_code}"
         )
 
     def test_player_name_too_long_rejected(self, client):
@@ -226,13 +226,13 @@ class TestPlayerNameValidation:
                 f"Valid player_name '{name}' rejected: {resp.json()}"
             )
 
-    def test_player_name_whitespace_only_rejected(self, client):
+    def test_player_name_whitespace_only_accepted_as_empty(self, client):
         resp = client.post(
             "/api/game/new",
             json={"world": "fantasy", "player_name": "   "},
         )
-        assert resp.status_code == 422, (
-            f"Whitespace-only player_name should be rejected, got {resp.status_code}"
+        assert resp.status_code == 200, (
+            f"Whitespace-only player_name should be accepted (trimmed to empty), got {resp.status_code}"
         )
 
 

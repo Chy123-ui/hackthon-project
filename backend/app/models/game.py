@@ -18,7 +18,7 @@ class GameResponse(BaseModel):
 
 class NewGameRequest(BaseModel):
     world: str = "fantasy"
-    player_name: str = Field(default="冒险者", max_length=30)
+    player_name: str = Field(default="", max_length=30)
 
     @field_validator("world")
     @classmethod
@@ -32,12 +32,10 @@ class NewGameRequest(BaseModel):
     @field_validator("player_name")
     @classmethod
     def sanitize_player_name(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("player_name is required")
-        v = v.strip()
+        v = (v or "").strip()
         if len(v) > 30:
             raise ValueError("player_name too long (max 30 characters)")
-        if not PLAYER_NAME_RE.match(v):
+        if v and not PLAYER_NAME_RE.match(v):
             raise ValueError(
                 "player_name contains invalid characters; "
                 "allowed: letters, digits, Chinese/Japanese, underscore, hyphen"
@@ -80,7 +78,14 @@ class ConfigUpdate(BaseModel):
 
 class TemplateUpdate(BaseModel):
     """PUT /templates/{world}/world|player|preferences body"""
-    pass
+    model_config = {"extra": "allow"}
+
+
+class TemplateSaveRequest(BaseModel):
+    """PUT /templates/{world} - save all template parts at once"""
+    world: dict = {}
+    player: dict = {}
+    preferences: dict = {}
 
 
 class ModifyRequest(BaseModel):

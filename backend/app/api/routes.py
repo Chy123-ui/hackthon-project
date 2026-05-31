@@ -27,6 +27,7 @@ from ..models.game import (
     GameAction,
     ConfigUpdate,
     TemplateUpdate,
+    TemplateSaveRequest,
     ModifyRequest,
     GenerateRequest,
     ImportRequest,
@@ -152,6 +153,15 @@ async def get_world_template(world: str):
     if data is None:
         raise HTTPException(status_code=404, detail=f"World '{world}' not found")
     return data
+
+
+@router.put("/templates/{world}")
+async def save_template(world: str, body: TemplateSaveRequest):
+    world = _sanitize_name(world)
+    prompt_engine.save_world(world, body.world)
+    prompt_engine.save_player(world, body.player)
+    prompt_engine.save_preferences(world, body.preferences)
+    return {"status": "ok"}
 
 
 @router.put("/templates/{world}/world")

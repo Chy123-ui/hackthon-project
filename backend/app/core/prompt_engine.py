@@ -131,7 +131,7 @@ class PromptEngine:
                 lines.append(f"  {key}: {value}")
         return "\n".join(lines)
 
-    def build_context(self, world: str, player_name: str = "冒险者") -> dict:
+    def build_context(self, world: str, player_name: str = "") -> dict:
         w = self.load_world(world) or {}
         p = self.load_player(world) or {}
         pref = self.load_preferences(world) or {}
@@ -139,7 +139,7 @@ class PromptEngine:
             "world_name": w.get("name", world),
             "world_description": w.get("description", ""),
             "starting_scene": w.get("starting_scene", ""),
-            "player_name": p.get("name", player_name),
+            "player_name": player_name or p.get("name") or "冒险者",
             "player_description": p.get("description", ""),
             "player_background": p.get("background", ""),
             "narrative_style": pref.get("narrative_style", ""),
@@ -152,7 +152,7 @@ class PromptEngine:
     def render_system_prompt(
         self,
         world: str,
-        player_name: str = "冒险者",
+        player_name: str = "",
         game_state: Optional[dict] = None,
     ) -> str:
         protocol = self.load_protocol()
