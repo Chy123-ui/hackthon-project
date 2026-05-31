@@ -65,6 +65,7 @@ export default function GameChat({ gameId, playerName, onBack }: Props) {
       if (withMeta) {
         setGameState(data.game_state || {});
         setSuggestions(data.suggestions || []);
+        console.log("[DEBUG] loaded suggestions:", data.suggestions);
       }
       getGameTokens(gameId).then(setTokens).catch(() => {});
     } catch (e: unknown) {
