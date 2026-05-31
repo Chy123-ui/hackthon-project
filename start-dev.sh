@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "============================================"
-echo "  AI WenYou - Backend Setup"
+echo "  re:life - Dev Setup"
 echo "============================================"
 echo ""
 

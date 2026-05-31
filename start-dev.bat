@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-title AI WenYou - Launcher
+title re:life - Launcher
 
 echo ============================================
-echo  AI WenYou - Backend Setup
+echo   re:life - Dev Setup
 echo ============================================
 echo.
 
