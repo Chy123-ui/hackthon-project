@@ -10,7 +10,17 @@ env/
 # Node
 node_modules/
 dist/
+
+# Build artifacts
 build/
+*.zip
+*.sarif
+
+# Testing
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
 
 # PyInstaller
 *.spec
@@ -32,5 +42,5 @@ Thumbs.db
 # Secrets
 Key/
 .env
-".playwright-mcp/"  
-"snap*.txt"  
+".playwright-mcp/"
+"snap*.txt"

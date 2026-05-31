@@ -1,9 +1,17 @@
 """API 路由 -- Agent 协议 + Tape 上下文管理"""
 import json
 import io
+import logging
 import re
 import yaml
+import httpx
 from fastapi import APIRouter, HTTPException
+
+logger = logging.getLogger(__name__)
+
+_IO_ERRORS = (OSError, IOError, json.JSONDecodeError, ValueError, TypeError)
+_LLM_ERRORS = (httpx.HTTPError, OSError, KeyError, TypeError, IndexError, json.JSONDecodeError)
+_ZIP_ERRORS = (ValueError, KeyError, AttributeError, OSError)
 from fastapi.responses import StreamingResponse
 from ..core.config import settings
 from ..core.prompt_engine import PromptEngine
@@ -18,6 +26,10 @@ from ..models.game import (
     NewGameResponse,
     GameAction,
     ConfigUpdate,
+    TemplateUpdate,
+    ModifyRequest,
+    GenerateRequest,
+    ImportRequest,
 )
 
 
@@ -38,17 +50,21 @@ def _load_server_config() -> dict:
         if CONFIG_PATH.exists():
             with open(CONFIG_PATH, "r", encoding="utf-8") as f:
                 return decrypt_config(json.load(f))
-    except Exception:
-        pass
+    except _IO_ERRORS:
+        logger.warning("Failed to load server config", exc_info=True)
     return {}
 
 
-def _save_server_config(config: dict) -> None:
+def _save_server_config(config: dict) -> bool:
     try:
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        tmp_path = CONFIG_PATH.with_suffix(".json.tmp")
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(encrypt_api_key(config), f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
+        tmp_path.replace(CONFIG_PATH)
+        return True
+    except _IO_ERRORS:
+        logger.error("Failed to save server config", exc_info=True)
+        return False
 
 
 def _apply_config(config: dict) -> None:
@@ -97,14 +113,15 @@ async def update_config(body: ConfigUpdate):
     config = _load_server_config()
     update_data = body.model_dump(exclude_none=True)
     config.update(update_data)
-    _save_server_config(config)
+    if not _save_server_config(config):
+        raise HTTPException(status_code=500, detail="Failed to save configuration")
     _apply_config(config)
     if settings.api_key and settings.model:
         try:
             max_tok = await fetch_model_max_tokens()
             settings.context_limit = max_tok
-        except Exception:
-            pass
+        except (httpx.HTTPError, OSError):
+            logger.warning("Failed to fetch model info", exc_info=True)
     return {"status": "ok"}
 
 
@@ -130,6 +147,7 @@ async def list_templates():
 
 @router.get("/templates/{world}/world")
 async def get_world_template(world: str):
+    world = _sanitize_name(world)
     data = prompt_engine.load_world(world)
     if data is None:
         raise HTTPException(status_code=404, detail=f"World '{world}' not found")
@@ -137,37 +155,43 @@ async def get_world_template(world: str):
 
 
 @router.put("/templates/{world}/world")
-async def update_world_template(world: str, body: dict):
-    prompt_engine.save_world(world, body)
+async def update_world_template(world: str, body: TemplateUpdate):
+    world = _sanitize_name(world)
+    prompt_engine.save_world(world, body.model_dump(exclude_unset=True))
     return {"status": "ok"}
 
 
 @router.get("/templates/{world}/player")
 async def get_player_template(world: str):
+    world = _sanitize_name(world)
     data = prompt_engine.load_player(world)
     return data or {}
 
 
 @router.put("/templates/{world}/player")
-async def update_player_template(world: str, body: dict):
-    prompt_engine.save_player(world, body)
+async def update_player_template(world: str, body: TemplateUpdate):
+    world = _sanitize_name(world)
+    prompt_engine.save_player(world, body.model_dump(exclude_unset=True))
     return {"status": "ok"}
 
 
 @router.get("/templates/{world}/preferences")
 async def get_preferences_template(world: str):
+    world = _sanitize_name(world)
     data = prompt_engine.load_preferences(world)
     return data or {}
 
 
 @router.put("/templates/{world}/preferences")
-async def update_preferences_template(world: str, body: dict):
-    prompt_engine.save_preferences(world, body)
+async def update_preferences_template(world: str, body: TemplateUpdate):
+    world = _sanitize_name(world)
+    prompt_engine.save_preferences(world, body.model_dump(exclude_unset=True))
     return {"status": "ok"}
 
 
 @router.delete("/templates/{world}")
 async def delete_world_template(world: str):
+    world = _sanitize_name(world)
     if prompt_engine.delete_world(world):
         return {"status": "ok"}
     raise HTTPException(status_code=404, detail=f"World '{world}' not found")
@@ -175,6 +199,7 @@ async def delete_world_template(world: str):
 
 @router.get("/templates/{world}/preview")
 async def preview_system_prompt(world: str):
+    world = _sanitize_name(world)
     prompt = prompt_engine.render_system_prompt(world, "预览角色名")
     return {"preview": prompt}
 
@@ -183,6 +208,7 @@ async def preview_system_prompt(world: str):
 
 @router.get("/templates/{world}/export")
 async def export_world(world: str):
+    world = _sanitize_name(world)
     world_data = prompt_engine.load_world(world)
     player_data = prompt_engine.load_player(world)
     prefs_data = prompt_engine.load_preferences(world)
@@ -261,8 +287,9 @@ MODIFY_PROMPT = """你是一个游戏世界观编辑助手。下面是当前游�
 
 
 @router.post("/templates/{world}/modify")
-async def modify_world(world: str, body: dict):
-    instruction = body.get("instruction", "").strip()
+async def modify_world(world: str, body: ModifyRequest):
+    world = _sanitize_name(world)
+    instruction = body.instruction.strip()
     if not instruction:
         raise HTTPException(status_code=400, detail="Instruction required")
 
@@ -287,8 +314,9 @@ async def modify_world(world: str, body: dict):
     try:
         result = await llm_client.chat([{"role": "user", "content": prompt}], max_tokens=settings.gen_max_tokens)
         raw = result["choices"][0]["message"]["content"]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
+    except _LLM_ERRORS as e:
+        logger.error("LLM API request failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="LLM API request failed")
 
     world_name, files = _parse_world_gen(raw, f"modified_{world}")
     if world_name is None:
@@ -305,6 +333,7 @@ async def modify_world(world: str, body: dict):
 
 @router.get("/templates/{world}/modify-suggestions")
 async def get_modify_suggestions(world: str):
+    world = _sanitize_name(world)
     world_data = prompt_engine.load_world(world)
     player_data = prompt_engine.load_player(world)
     prefs_data = prompt_engine.load_preferences(world)
@@ -326,7 +355,8 @@ async def get_modify_suggestions(world: str):
         raw = result["choices"][0]["message"]["content"]
         suggestions = [s.strip() for s in raw.split(",") if s.strip()]
         return {"suggestions": suggestions[:5]}
-    except Exception as e:
+    except _LLM_ERRORS as e:
+        logger.warning("Failed to fetch suggestions: %s", e)
         return {"suggestions": []}
 
 
@@ -356,6 +386,9 @@ def _extract_docx(raw: bytes) -> str:
     import xml.etree.ElementTree as ET
     try:
         with zipfile.ZipFile(io.BytesIO(raw)) as z:
+            total_uncompressed = sum(info.file_size for info in z.infolist())
+            if total_uncompressed > 50 * 1024 * 1024:
+                return ""
             if "word/document.xml" not in z.namelist():
                 return ""
             xml = z.read("word/document.xml")
@@ -367,7 +400,7 @@ def _extract_docx(raw: bytes) -> str:
                 if texts:
                     paragraphs.append("".join(texts))
             return "\n".join(paragraphs)
-    except Exception:
+    except _ZIP_ERRORS:
         return ""
 
 
@@ -379,10 +412,10 @@ def _extract_doc(raw: bytes) -> str:
 
 
 @router.post("/templates/import")
-async def import_world(body: dict):
-    content = body.get("content", "").strip()
-    filename = body.get("filename", "imported.txt").strip()
-    is_binary = body.get("binary", False)
+async def import_world(body: ImportRequest):
+    content = body.content.strip()
+    filename = body.filename.strip()
+    is_binary = body.binary
 
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     allowed = {"txt", "json", "yaml", "yml", "md", "docx", "doc"}
@@ -424,8 +457,9 @@ async def import_world(body: dict):
             {"role": "user", "content": IMPORT_PROMPT.format(content=_escape_format(content[:8000]))}
         ], max_tokens=settings.gen_max_tokens)
         raw = result["choices"][0]["message"]["content"]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
+    except _LLM_ERRORS as e:
+        logger.error("LLM API request failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="LLM API request failed")
 
     world_name, files = _parse_world_gen(raw, _basename(filename))
     if world_name is None:
@@ -506,8 +540,8 @@ detail_level: 细节程度偏好
 
 
 @router.post("/templates/new")
-async def generate_world(body: dict):
-    concept = body.get("concept", "").strip()
+async def generate_world(body: GenerateRequest):
+    concept = body.concept.strip()
     if not concept:
         raise HTTPException(status_code=400, detail="Concept is required")
     try:
@@ -515,8 +549,9 @@ async def generate_world(body: dict):
             {"role": "user", "content": WORLD_GEN_PROMPT.format(concept=_escape_format(concept))}
         ], max_tokens=settings.gen_max_tokens)
         raw = result["choices"][0]["message"]["content"]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
+    except _LLM_ERRORS as e:
+        logger.error("LLM API request failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="LLM API request failed")
     world_name, world_files = _parse_world_gen(raw, concept)
     if world_name is None:
         raise HTTPException(status_code=500, detail="Failed to parse AI output")
@@ -595,32 +630,37 @@ async def new_game(body: NewGameRequest):
 
 @router.post("/game/{game_id}/start")
 async def start_game(game_id: str):
-    session = session_manager.load(game_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
-    if session["messages"]:
-        return {"status": "already_started"}
-    game_state = session.get("game_state", {})
-    system_prompt = prompt_engine.render_system_prompt(session["world"], session["player_name"], game_state)
-    first_scene = prompt_engine.render_first_message(session["world"], session["player_name"])
-    starter = f"{system_prompt}\n\n现在开始游戏。玩家当前场景参考：{_escape_format(first_scene[:100])}..."
-    if "首先，请为这个场景开场" not in starter:
-        starter += "\n请以生动叙事开场，不要重复上述场景参考的原文。"
-    messages = [{"role": "system", "content": starter}, {"role": "user", "content": "(游戏开始)"}]
+    lk = session_manager.lock(game_id)
     try:
-        result = await llm_client.chat(messages)
-        raw_reply = result["choices"][0]["message"]["content"]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
-    session["messages"].append({"role": "user", "content": "(游戏开始)", "tape": "normal"})
-    session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
-    session["turn"] = 1
-    parsed = _build_and_tag(session, raw_reply)
-    if parsed["state_updates"]:
-        session["game_state"] = prompt_engine.apply_state_updates(game_state, parsed["state_updates"])
-    if parsed["suggestions"]:
-        session["suggestions"] = parsed["suggestions"]
-    session_manager.save(game_id, session)
+        session = session_manager.load(game_id)
+        if session is None:
+            raise HTTPException(status_code=404, detail="Session not found")
+        if session["messages"]:
+            return {"status": "already_started"}
+        game_state = session.get("game_state", {})
+        system_prompt = prompt_engine.render_system_prompt(session["world"], session["player_name"], game_state)
+        first_scene = prompt_engine.render_first_message(session["world"], session["player_name"])
+        starter = f"{system_prompt}\n\n现在开始游戏。玩家当前场景参考：{_escape_format(first_scene[:100])}..."
+        if "首先，请为这个场景开场" not in starter:
+            starter += "\n请以生动叙事开场，不要重复上述场景参考的原文。"
+        messages = [{"role": "system", "content": starter}, {"role": "user", "content": "(游戏开始)"}]
+        try:
+            result = await llm_client.chat(messages)
+            raw_reply = result["choices"][0]["message"]["content"]
+        except _LLM_ERRORS as e:
+            logger.error("LLM API request failed: %s", e, exc_info=True)
+            raise HTTPException(status_code=500, detail="LLM API request failed")
+        session["messages"].append({"role": "user", "content": "(游戏开始)", "tape": "normal"})
+        session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
+        session["turn"] = 1
+        parsed = _build_and_tag(session, raw_reply)
+        if parsed["state_updates"]:
+            session["game_state"] = prompt_engine.apply_state_updates(game_state, parsed["state_updates"])
+        if parsed["suggestions"]:
+            session["suggestions"] = parsed["suggestions"]
+        session_manager.save(game_id, session)
+    finally:
+        lk.release()
     return {
         "content": parsed["narrate"] or raw_reply,
         "thought": parsed["thought"],
@@ -632,39 +672,46 @@ async def start_game(game_id: str):
 
 @router.post("/game/{game_id}/action")
 async def game_action(game_id: str, body: GameAction):
-    session = session_manager.load(game_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
-    game_state = session.get("game_state", {})
-    system_prompt = prompt_engine.render_system_prompt(session["world"], session["player_name"], game_state)
-    messages = assemble_messages(session, system_prompt, settings.context_limit, body.action)
+    lk = session_manager.lock(game_id)
     try:
-        result = await llm_client.chat(messages)
-        raw_reply = result["choices"][0]["message"]["content"]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
-    session["messages"].append({"role": "user", "content": body.action, "tape": "normal"})
-    session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
-    session["turn"] += 1
-    parsed = _build_and_tag(session, raw_reply)
-    if parsed["state_updates"]:
-        session["game_state"] = prompt_engine.apply_state_updates(game_state, parsed["state_updates"])
-    if parsed["suggestions"]:
-        session["suggestions"] = parsed["suggestions"]
-    session_manager.save(game_id, session)
-    return {
-        "content": parsed["narrate"] or raw_reply,
-        "thought": parsed["thought"],
-        "suggestions": parsed["suggestions"],
-        "state": session["game_state"],
-        "turn": session["turn"],
-    }
+        session = session_manager.load(game_id)
+        if session is None:
+            raise HTTPException(status_code=404, detail="Session not found")
+        game_state = session.get("game_state", {})
+        system_prompt = prompt_engine.render_system_prompt(session["world"], session["player_name"], game_state)
+        messages = assemble_messages(session, system_prompt, settings.context_limit, body.action)
+        try:
+            result = await llm_client.chat(messages)
+            raw_reply = result["choices"][0]["message"]["content"]
+        except _LLM_ERRORS as e:
+            logger.error("LLM API request failed: %s", e, exc_info=True)
+            raise HTTPException(status_code=500, detail="LLM API request failed")
+        session["messages"].append({"role": "user", "content": body.action, "tape": "normal"})
+        session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
+        session["turn"] += 1
+        parsed = _build_and_tag(session, raw_reply)
+        if parsed["state_updates"]:
+            session["game_state"] = prompt_engine.apply_state_updates(game_state, parsed["state_updates"])
+        if parsed["suggestions"]:
+            session["suggestions"] = parsed["suggestions"]
+        session_manager.save(game_id, session)
+        return {
+            "content": parsed["narrate"] or raw_reply,
+            "thought": parsed["thought"],
+            "suggestions": parsed["suggestions"],
+            "state": session["game_state"],
+            "turn": session["turn"],
+        }
+    finally:
+        lk.release()
 
 
 @router.post("/game/{game_id}/action/stream")
 async def game_action_stream(game_id: str, body: GameAction):
+    lk = session_manager.lock(game_id)
     session = session_manager.load(game_id)
     if session is None:
+        lk.release()
         raise HTTPException(status_code=404, detail="Session not found")
     game_state = session.get("game_state", {})
     system_prompt = prompt_engine.render_system_prompt(session["world"], session["player_name"], game_state)
@@ -676,8 +723,9 @@ async def game_action_stream(game_id: str, body: GameAction):
             async for chunk in llm_client.chat_stream(messages):
                 full_reply += chunk
                 yield f"data: {json.dumps({'content': chunk})}\n\n"
-        except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        except _LLM_ERRORS as e:
+            logger.error("LLM stream request failed: %s", e, exc_info=True)
+            yield f"data: {json.dumps({'error': 'LLM API request failed'})}\n\n"
         finally:
             if full_reply:
                 truncated = "</narrate>" not in full_reply
@@ -692,6 +740,7 @@ async def game_action_stream(game_id: str, body: GameAction):
                     session["suggestions"] = parsed["suggestions"]
                 session_manager.save(game_id, session)
                 yield f"data: {json.dumps({'parsed': {'suggestions': parsed['suggestions'], 'state': session['game_state']}})}\n\n"
+            lk.release()
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(stream_response(), media_type="text/event-stream",

@@ -1,87 +1,62 @@
-name: Build and Release
+name: Release
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm install
-        working-directory: frontend
-      - run: npm run build
-        working-directory: frontend
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - run: pip install -r backend/requirements.txt
-      - run: python -c "import sys; sys.path.insert(0, 'backend'); from app.main import app"
-
   release:
-    if: startsWith(github.ref, 'refs/heads/main') && github.event_name == 'push'
-    needs: check
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - run: npm install
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
         working-directory: frontend
-      - run: npm run build
-        working-directory: frontend
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - shell: cmd
+
+      - name: Build and package
+        run: bash build.sh
+
+      - name: Generate version tag
+        id: version
         run: |
-          mkdir release\re-life\data
-          xcopy backend\app release\re-life\app /E /I
-          xcopy backend\protocol release\re-life\protocol /E /I
-          xcopy backend\default_worlds release\re-life\default_worlds /E /I
-          xcopy frontend\dist release\re-life\dist /E /I
-          copy backend\requirements.txt release\re-life\requirements.txt
-          copy backend\run.py release\re-life\run.py
-      - shell: cmd
-        run: |
-          echo @echo off> release\re-life\start.bat
-          echo chcp 65001 ^>nul>> release\re-life\start.bat
-          echo cd /d "%%~dp0">> release\re-life\start.bat
-          echo if not exist ".venv\Scripts\python.exe" (>> release\re-life\start.bat
-          echo   echo Setting up environment...>> release\re-life\start.bat
-          echo   python -m venv .venv>> release\re-life\start.bat
-          echo   .venv\Scripts\pip install -r requirements.txt>> release\re-life\start.bat
-          echo )>> release\re-life\start.bat
-          echo start "" http://localhost:8000>> release\re-life\start.bat
-          echo .venv\Scripts\python run.py>> release\re-life\start.bat
-      - run: |
-          echo # re:life> release\re-life\README.md
-          echo.>> release\re-life\README.md
-          echo ## 系统要求>> release\re-life\README.md
-          echo - Python 3.10 或更高版本>> release\re-life\README.md
-          echo - Windows 10+ / macOS / Linux>> release\re-life\README.md
-          echo.>> release\re-life\README.md
-          echo ## 快速开始>> release\re-life\README.md
-          echo 1. 双击 start.bat 启动>> release\re-life\README.md
-          echo 2. 首次启动自动安装依赖（约 1 分钟）>> release\re-life\README.md
-          echo 3. 浏览器打开 http://localhost:8000>> release\re-life\README.md
-          echo 4. Settings 填 API Key 然后 Game 开始游戏>> release\re-life\README.md
-      - run: Compress-Archive -Path release\re-life -DestinationPath release\re-life.zip
-      - uses: softprops/action-gh-release@v2
+          TAG="v$(date +%Y.%m.%d)-${GITHUB_SHA::7}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "$TAG"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          files: release/re-life.zip
-          tag_name: latest
-          name: Latest Build
-          body: Auto-built from ${{ github.sha }}
-          prerelease: true
+          files: build/re-life.zip
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body: |
+            Auto-built from [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
+
+            ### 使用方式
+            1. 下载 `re-life.zip` 并解压
+            2. Windows: 双击 `start.bat` 启动
+            3. macOS / Linux: 终端运行 `chmod +x start.sh && ./start.sh`
+            4. 浏览器打开 http://localhost:8000
+
+      - name: Update latest tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag --force latest
+          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" latest

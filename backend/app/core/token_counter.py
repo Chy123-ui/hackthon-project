@@ -5,7 +5,7 @@ try:
     import tiktoken
     _ENC = tiktoken.get_encoding("cl100k_base")
     _HAS_TIKTOKEN = True
-except Exception:
+except ImportError:
     _ENC = None
     _HAS_TIKTOKEN = False
 

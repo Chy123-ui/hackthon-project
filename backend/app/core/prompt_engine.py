@@ -36,18 +36,38 @@ class PromptEngine:
         self.worlds_dir.mkdir(parents=True, exist_ok=True)
         self._seed_defaults()
 
+    @staticmethod
+    def _validate_world_name(world: str) -> str:
+        if not world:
+            raise ValueError("world name is required")
+        if ".." in world:
+            raise ValueError("invalid world name")
+        cleaned = re.sub(r"[\/\\:*?\"<>|]", "", world.strip())
+        if not cleaned:
+            raise ValueError("invalid world name")
+        return cleaned[:30]
+
+    def _resolve_world_dir(self, world: str) -> Path:
+        safe = self._validate_world_name(world)
+        resolved = (self.worlds_dir / safe).resolve()
+        if not str(resolved).startswith(str(self.worlds_dir.resolve())):
+            raise ValueError("path traversal detected")
+        return resolved
+
     def _load_yaml(self, path) -> dict:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 raw = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", "", f.read())
                 return yaml.safe_load(raw) or {}
-        except Exception:
+        except (yaml.YAMLError, OSError, ValueError):
             return {}
 
     def _save_yaml(self, path, data: dict) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
+        tmp_path = path.with_suffix(path.suffix + ".tmp")
+        with open(tmp_path, "w", encoding="utf-8") as f:
             yaml.dump(_sanitize_yaml(data), f, allow_unicode=True, default_flow_style=False)
+        tmp_path.replace(path)
 
     def _seed_defaults(self) -> None:
         """Copy fantasy default template only on first run"""
@@ -76,7 +96,7 @@ class PromptEngine:
         return ""
 
     def _find_world_file(self, world: str, filename: str) -> Optional[Path]:
-        path = self.worlds_dir / world / filename
+        path = self._resolve_world_dir(world) / filename
         return path if path.exists() else None
 
     def load_world(self, world: str) -> Optional[dict]:
@@ -84,21 +104,21 @@ class PromptEngine:
         return self._load_yaml(path) if path else None
 
     def save_world(self, world: str, data: dict) -> None:
-        self._save_yaml(self.worlds_dir / world / "world.yaml", data)
+        self._save_yaml(self._resolve_world_dir(world) / "world.yaml", data)
 
     def load_player(self, world: str) -> Optional[dict]:
         path = self._find_world_file(world, "player.yaml")
         return self._load_yaml(path) if path else None
 
     def save_player(self, world: str, data: dict) -> None:
-        self._save_yaml(self.worlds_dir / world / "player.yaml", data)
+        self._save_yaml(self._resolve_world_dir(world) / "player.yaml", data)
 
     def load_preferences(self, world: str) -> Optional[dict]:
         path = self._find_world_file(world, "preferences.yaml")
         return self._load_yaml(path) if path else None
 
     def save_preferences(self, world: str, data: dict) -> None:
-        self._save_yaml(self.worlds_dir / world / "preferences.yaml", data)
+        self._save_yaml(self._resolve_world_dir(world) / "preferences.yaml", data)
 
     def _format_state_context(self, state: dict) -> str:
         if not state:
@@ -215,7 +235,10 @@ class PromptEngine:
 
     def delete_world(self, world: str) -> bool:
         import shutil
-        path = self.worlds_dir / world
+        try:
+            path = self._resolve_world_dir(world)
+        except ValueError:
+            return False
         if path.exists() and path.is_dir():
             shutil.rmtree(path)
             return True

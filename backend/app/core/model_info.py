@@ -1,6 +1,9 @@
 """Fetch model info from API to get max_context_length"""
 import httpx
+import logging
 from .config import settings
+
+logger = logging.getLogger(__name__)
 
 
 async def fetch_model_max_tokens() -> int:
@@ -17,6 +20,7 @@ async def fetch_model_max_tokens() -> int:
                 if m.get("id") == settings.model:
                     ctx = m.get("context_window") or m.get("max_input_tokens") or 131072
                     return int(ctx)
-    except Exception:
+    except (httpx.HTTPError, OSError, ValueError, KeyError) as e:
+        logger.warning("Failed to fetch model info for model=%s: %s", settings.model, e)
         pass
     return 131072
