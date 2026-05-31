@@ -38,7 +38,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
 
   async function loadAll() {
     try { const w = await listWorlds(); setWorlds(w.worlds); }
-    catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); }
+    catch (e: unknown) { setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e))); }
   }
 
   function openEditor(world: string) { setSelectedWorld(world); setEditing(true); loadWorldFiles(world); }
@@ -53,7 +53,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
       setPlayerData(JSON.stringify(pl, null, 2));
       setPreferencesData(JSON.stringify(pr, null, 2));
       setPreview(pv.preview || "");
-    } catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); }
+    } catch (e: unknown) { setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e))); }
   }
 
   const fileMap: Record<WorldFile, { data: string }> = {
@@ -74,8 +74,8 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
       );
       const p = await previewTemplate(selectedWorld);
       setPreview(p.preview || "");
-      setStatus("saved"); setTimeout(() => setStatus(""), 2000);
-    } catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); }
+      setStatus("\u5df2\u4fdd\u5b58"); setTimeout(() => setStatus(""), 2000);
+    } catch (e: unknown) { setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e))); }
     finally { setSaving(false); }
   }
 
@@ -86,7 +86,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a"); a.href = url; a.download = `${w}.json`; a.click();
       URL.revokeObjectURL(url);
-    } catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); }
+    } catch (e: unknown) { setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e))); }
   }
 
   async function handleAiAssist() {
@@ -94,16 +94,16 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
     if (!instr) return;
     setAiInstruction("");
     setAiModifying(true);
-    setStatus("AI is modifying...");
+    setStatus("AI \u4fee\u6539\u4e2d...");
     try {
       const result = await modifyWorld(selectedWorld, instr);
       setAiHistory((prev) => [...prev.slice(-9), instr]);
       await loadAll();
       openEditor(result.world);
-      setStatus("AI modified successfully");
+      setStatus("AI \u4fee\u6539\u5b8c\u6210");
       setTimeout(() => setStatus(""), 2000);
     } catch (e: unknown) {
-      setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+      setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setAiModifying(false);
     }
@@ -221,11 +221,11 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
       }
       setSelected(new Set());
       setMultiMode(false);
-      setStatus("deleted");
+      setStatus("\u5df2\u5220\u9664");
       setTimeout(() => setStatus(""), 2000);
       await loadAll();
     } catch (e: unknown) {
-      setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+      setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e)));
     }
   }
 
@@ -239,7 +239,7 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
         worlds={visibleWorlds} selectedWorld={selectedWorld}
         onSelect={openEditor} onNewWorld={() => { setShowNewWorld(true); setShowAiAssist(false); }}
         onExport={handleExport}
-        onDelete={async (w) => { try { await deleteWorld(w); setStatus("deleted"); setTimeout(() => setStatus(""), 2000); await loadAll(); } catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); } }}
+        onDelete={async (w) => { try { await deleteWorld(w); setStatus("\u5df2\u5220\u9664"); setTimeout(() => setStatus(""), 2000); await loadAll(); } catch (e: unknown) { setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e))); } }}
         multiSelect={multiMode}
         selected={selected}
         onSelectToggle={toggleSelect}
@@ -249,9 +249,9 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
         selectedCount={selected.size}
         onBulkDelete={handleBulkDelete}
       />
-      {showNewWorld && <NewWorldDialog onCreated={(w) => { setShowNewWorld(false); loadAll().then(() => openEditor(w)); }} onError={(msg) => setStatus("error: " + msg)} onClose={() => setShowNewWorld(false)} />}
+      {showNewWorld && <NewWorldDialog onCreated={(w) => { setShowNewWorld(false); loadAll().then(() => openEditor(w)); }} onError={(msg) => setStatus("\u9519\u8bef: " + msg)} onClose={() => setShowNewWorld(false)} />}
       {status && (
-        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "10px 24px", borderRadius: "var(--radius)", background: status.startsWith("error") ? "var(--danger)" : "var(--accent)", color: "#fff", fontSize: 14, fontWeight: 500, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", zIndex: 1000 }}>
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "10px 24px", borderRadius: "var(--radius)", background: status.startsWith("\u9519\u8bef") ? "var(--danger)" : "var(--accent)", color: "#fff", fontSize: 14, fontWeight: 500, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", zIndex: 1000 }}>
           {status}
         </div>
       )}

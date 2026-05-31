@@ -77,8 +77,8 @@ export default function WorldFileEditor({
         ))}
         <button className="secondary" onClick={onAiAssist} style={{ fontSize: 13 }}>AI 修改</button>
         <button className="primary" onClick={onSave} disabled={saving}>{saving ? "保存中..." : "保存模板"}</button>
-        {status === "saved" && <span className="status-badge saved">已保存</span>}
-        {status.startsWith("error") && <span className="status-badge error">{status}</span>}
+        {status === "\u5df2\u4fdd\u5b58" && <span className="status-badge saved">\u5df2\u4fdd\u5b58</span>}
+        {status.startsWith("\u9519\u8bef") && <span className="status-badge error">{status}</span>}
       </div>
 
       <div className="template-row">

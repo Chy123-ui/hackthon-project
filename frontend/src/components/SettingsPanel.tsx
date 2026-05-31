@@ -16,7 +16,7 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
     getConfig()
       .then(setConfig)
       .catch((e: unknown) => {
-        setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+        setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e)));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -25,10 +25,10 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
     try {
       setSaving(true);
       await updateConfig(config);
-      setStatus("saved");
+      setStatus("\u5df2\u4fdd\u5b58");
       setTimeout(() => setStatus(""), 2000);
     } catch (e: unknown) {
-      setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+      setStatus("\u9519\u8bef: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setSaving(false);
     }
@@ -64,7 +64,7 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
         <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>加载中...</p>
       )}
 
-      {status.startsWith("error") && (
+      {status.startsWith("\u9519\u8bef") && (
         <div style={{
           padding: "8px 12px", marginBottom: 16,
           background: "rgba(212,90,90,0.1)",
@@ -100,7 +100,7 @@ export default function SettingsPanel({ searchQuery = "" }: Props) {
         <button className="primary" onClick={handleSave} disabled={saving}>
           {saving ? "保存中..." : "保存设置"}
         </button>
-        {status === "saved" && (
+        {status === "\u5df2\u4fdd\u5b58" && (
           <span className="status-badge saved">已保存</span>
         )}
       </div>
