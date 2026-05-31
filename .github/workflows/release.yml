@@ -44,7 +44,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - run: |
+      - shell: cmd
+        run: |
           mkdir release\re-life\data
           xcopy backend\app release\re-life\app /E /I
           xcopy backend\protocol release\re-life\protocol /E /I
@@ -52,7 +53,8 @@ jobs:
           xcopy frontend\dist release\re-life\dist /E /I
           copy backend\requirements.txt release\re-life\requirements.txt
           copy backend\run.py release\re-life\run.py
-      - run: |
+      - shell: cmd
+        run: |
           echo @echo off> release\re-life\start.bat
           echo chcp 65001 ^>nul>> release\re-life\start.bat
           echo cd /d "%%~dp0">> release\re-life\start.bat
