@@ -597,6 +597,7 @@ async def start_game(game_id: str):
         raw_reply = result["choices"][0]["message"]["content"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM API error: {str(e)}")
+    print(f"[RAW] has_suggestions: {'<suggestions>' in raw_reply} | tail: ...{raw_reply[-200:]}", flush=True)
     session["messages"].append({"role": "user", "content": "(游戏开始)", "tape": "normal"})
     session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
     session["turn"] = 1
