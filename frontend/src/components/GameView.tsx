@@ -104,7 +104,7 @@ export default function GameView({ searchQuery = "" }: Props) {
     try {
       await deleteGame(deleteTarget);
       setDeleteTarget(null);
-      setStatus("\u5df2\u5220\u9664"); setTimeout(() => setStatus(""), 2000);
+      setStatus("已删除"); setTimeout(() => setStatus(""), 2000);
       await loadAll();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));

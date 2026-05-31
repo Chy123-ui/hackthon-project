@@ -42,7 +42,7 @@ export default function HistoryView({ searchQuery = "" }: Props) {
       await deleteGame(deleteTarget);
       setDeleteTarget(null);
       if (activeSession?.id === deleteTarget) setActiveSession(null);
-      setStatus("\u5df2\u5220\u9664"); setTimeout(() => setStatus(""), 2000);
+      setStatus("已删除"); setTimeout(() => setStatus(""), 2000);
       await loadSessions();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -67,7 +67,7 @@ export default function HistoryView({ searchQuery = "" }: Props) {
       }
       setSelected(new Set());
       setMultiMode(false);
-      setStatus("\u5df2\u5220\u9664"); setTimeout(() => setStatus(""), 2000);
+      setStatus("已删除"); setTimeout(() => setStatus(""), 2000);
       await loadSessions();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
