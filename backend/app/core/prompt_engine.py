@@ -152,7 +152,7 @@ class PromptEngine:
             result["narrate"] = narrate_match.group(1).strip()
         suggestions_block = re.search(r"<(suggestions|actions)>(.*?)</\1>", raw, re.DOTALL)
         if suggestions_block:
-            actions = re.findall(r"<action>(.*?)</action>", suggestions_block.group(1), re.DOTALL)
+            actions = re.findall(r"<action>(.*?)</action>", suggestions_block.group(2), re.DOTALL)
             result["suggestions"] = [a.strip() for a in actions]
         state_block = re.search(r"<state>(.*?)</state>", raw, re.DOTALL)
         if state_block:
