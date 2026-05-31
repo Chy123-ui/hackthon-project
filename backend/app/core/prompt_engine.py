@@ -7,21 +7,22 @@ from pathlib import Path
 from .config import settings
 
 
-def _build_extra(w: dict, p: dict, pref: dict) -> str:
-    """Extract extra YAML fields"""
-    known = {"name", "description", "starting_scene", "background", "narrative_style", "tone", "pacing", "detail_level"}
-    lines = []
-    for _, data in [("世界额外设定", w), ("角色额外设定", p), ("偏好额外设定", pref)]:
-        extras = {k: v for k, v in data.items() if k not in known}
-        if extras:
-            for k, v in extras.items():
-                if isinstance(v, dict) and "label" in v:
-                    lines.append(f"  {v['label']}: {v.get('value', v)} (key={k})")
-                else:
-                    lines.append(f"  {k}: {yaml.dump(v, allow_unicode=True).strip()}")
-    if lines:
-        pass
-    return "\n".join(lines) if lines else "无"
+def _sanitize_yaml(data):
+    """Recursively strip control chars and escape YAML-significant content"""
+    if isinstance(data, str):
+        data = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", "", data)
+        lines = data.split("\n")
+        for i, line in enumerate(lines):
+            stripped = line.lstrip()
+            if stripped and stripped[0] in "-[{&*!@%>`|":
+                lines[i] = line.replace(stripped, "\\" + stripped, 1)
+        data = "\n".join(lines)
+        return data
+    if isinstance(data, dict):
+        return {k: _sanitize_yaml(v) for k, v in data.items()}
+    if isinstance(data, list):
+        return [_sanitize_yaml(v) for v in data]
+    return data
 
 
 class PromptEngine:
@@ -42,9 +43,7 @@ class PromptEngine:
     def _save_yaml(self, path, data: dict) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
-            raw = yaml.dump(data, allow_unicode=True, default_flow_style=False)
-            cleaned = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", "", raw)
-            f.write(cleaned)
+            yaml.dump(_sanitize_yaml(data), f, allow_unicode=True, default_flow_style=False)
 
     def _seed_defaults(self) -> None:
         """Copy fantasy default template only on first run"""
