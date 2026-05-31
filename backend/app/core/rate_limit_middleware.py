@@ -13,14 +13,19 @@ class RateLimitMiddleware:
         self._limits = {
             "/api/templates/new": (5, 60),
             "/api/templates/import": (5, 60),
-            "/api/templates/": (5, 60),
             "/api/game/": (10, 60),
         }
-        self._default_limit = (30, 60)
+        self._limit_prefixes = {
+            "/api/templates/": (5, 60),
+        }
+        self._default_limit = (60, 60)
 
     def _get_limit(self, path: str) -> tuple[int, int]:
         for prefix, limit in self._limits.items():
             if path.startswith(prefix):
+                return limit
+        for prefix, limit in self._limit_prefixes.items():
+            if path.startswith(prefix) and "modify" in path:
                 return limit
         return self._default_limit
 
