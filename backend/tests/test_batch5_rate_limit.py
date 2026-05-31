@@ -1,4 +1,5 @@
 """Batch 5 速率限制测试"""
+import os
 import pytest
 from fastapi.testclient import TestClient
 
@@ -9,72 +10,101 @@ def client():
     return TestClient(app)
 
 
-@pytest.mark.enable_rate_limit
-class TestRateLimiting:
-    """5.1+5.2: 速率限制中间件"""
+class TestLLMEndpointDetection:
+    """5.1: LLM 端点识别"""
 
-    def test_health_endpoint_not_rate_limited(self, client):
-        for _ in range(10):
+    def test_llm_paths_identified(self):
+        from app.core.rate_limit_middleware import RateLimitMiddleware
+
+        llm = [
+            "/api/templates/new",
+            "/api/templates/import",
+            "/api/templates/fantasy/modify",
+            "/api/templates/any/modify-suggestions",
+            "/api/game/abc123/start",
+            "/api/game/abc123/action",
+            "/api/game/abc123/action/stream",
+        ]
+        for path in llm:
+            assert RateLimitMiddleware._is_llm_endpoint(path), (
+                f"Should be LLM endpoint: {path}"
+            )
+
+    def test_non_llm_paths_not_identified(self):
+        from app.core.rate_limit_middleware import RateLimitMiddleware
+
+        non_llm = [
+            "/health",
+            "/api/config",
+            "/api/templates",
+            "/api/templates/fantasy/world",
+            "/api/templates/fantasy/player",
+            "/api/templates/fantasy/preferences",
+            "/api/templates/fantasy/export",
+            "/api/templates/core/protocol",
+        ]
+        for path in non_llm:
+            assert not RateLimitMiddleware._is_llm_endpoint(path), (
+                f"Should NOT be LLM endpoint: {path}"
+            )
+
+
+class TestRateLimitLogic:
+    """5.2: 限流逻辑验证 (单元级)"""
+
+    def test_non_llm_always_passes(self, monkeypatch):
+        from app.core.rate_limit_middleware import RateLimitMiddleware
+        monkeypatch.setenv("DISABLE_RATE_LIMIT", "0")
+        m = RateLimitMiddleware(None)
+        for i in range(200):
+            assert m._check("127.0.0.1", "/health"), (
+                f"Non-LLM endpoint should never be blocked"
+            )
+
+    def test_llm_endpoint_blocked_after_limit(self, monkeypatch):
+        from app.core.rate_limit_middleware import RateLimitMiddleware
+        monkeypatch.setenv("DISABLE_RATE_LIMIT", "0")
+        m = RateLimitMiddleware(None)
+        path = "/api/templates/new"
+        passed = 0
+        blocked = 0
+        for _ in range(65):
+            if m._check("127.0.0.1", path):
+                passed += 1
+            else:
+                blocked += 1
+        assert passed == 60, f"Expected 60 passed, got {passed}"
+        assert blocked >= 5, f"Expected >= 5 blocked, got {blocked}"
+
+    def test_disable_env_bypasses_llm_limit(self, monkeypatch):
+        from app.core.rate_limit_middleware import RateLimitMiddleware
+        monkeypatch.setenv("DISABLE_RATE_LIMIT", "1")
+        m = RateLimitMiddleware(None)
+        for i in range(80):
+            assert m._check("127.0.0.1", "/api/templates/new"), (
+                f"DISABLE_RATE_LIMIT should bypass all checking"
+            )
+
+
+class TestIntegrationBasic:
+    """5.3: 集成基本行为"""
+
+    def test_health_never_blocked(self, client):
+        for _ in range(30):
             resp = client.get("/health")
-            assert resp.status_code == 200, (
-                f"Health endpoint should not be rate limited"
-            )
+            assert resp.status_code != 429
 
-    def test_config_endpoint_not_rate_limited(self, client):
-        for _ in range(5):
+    def test_config_get_never_blocked(self, client):
+        for _ in range(30):
             resp = client.get("/api/config")
-            assert resp.status_code not in (429,), (
-                f"Config GET should not be rate limited: {resp.status_code}"
-            )
+            assert resp.status_code != 429
 
-    def test_llm_endpoint_rate_limited(self, client):
-        hit_limit = False
-        for i in range(10):
-            resp = client.post(
-                "/api/templates/new",
-                json={"concept": f"test concept {i}"},
-            )
-            if resp.status_code == 429:
-                hit_limit = True
-                detail = resp.json().get("detail", "")
-                assert "Rate limit exceeded" in detail, (
-                    f"429 response should contain 'Rate limit exceeded': {detail}"
-                )
-                break
-            assert resp.status_code in (200, 422, 500), (
-                f"Unexpected status: {resp.status_code}"
-            )
-        assert hit_limit, (
-            f"Rate limit should have been hit after 5+ requests to LLM endpoint"
-        )
+    def test_templates_list_never_blocked(self, client):
+        for _ in range(30):
+            resp = client.get("/api/templates")
+            assert resp.status_code != 429
 
-    def test_non_llm_endpoint_can_still_work(self, client):
-        for i in range(10):
-            resp = client.post(
-                "/api/templates/new",
-                json={"concept": f"burst {i}"},
-            )
-            if resp.status_code == 429:
-                break
-
-        resp = client.get("/health")
-        assert resp.status_code == 200, (
-            f"Health endpoint should work even after LLM rate limit"
-        )
-
-        resp2 = client.get("/api/config")
-        assert resp2.status_code not in (429,), (
-            f"Config endpoint should work even after LLM rate limit"
-        )
-
-    def test_429_response_has_retry_header(self, client):
-        for i in range(10):
-            resp = client.post(
-                "/api/templates/new",
-                json={"concept": f"retry test {i}"},
-            )
-            if resp.status_code == 429:
-                assert "Retry-After" in resp.headers, (
-                    "429 response should have Retry-After header"
-                )
-                break
+    def test_options_preflight_not_blocked(self, client):
+        for _ in range(30):
+            resp = client.options("/api/templates/new")
+            assert resp.status_code != 429

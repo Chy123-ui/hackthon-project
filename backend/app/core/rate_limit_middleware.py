@@ -1,8 +1,17 @@
-"""速率限制中间件 -- 基于内存的滑动窗口"""
+"""速率限制中间件 -- 仅限 LLM 端点，防意外脚本"""
 import os
 import time
 import threading
 from collections import defaultdict
+
+_LLM_LIMIT = (60, 60)
+_LLM_PATHS = {
+    "/api/templates/new",
+    "/api/templates/import",
+}
+_LLM_PREFIXES = {
+    "/api/game/",
+}
 
 
 class RateLimitMiddleware:
@@ -10,29 +19,24 @@ class RateLimitMiddleware:
         self.app = app
         self._lock = threading.Lock()
         self._windows: dict[str, list[float]] = defaultdict(list)
-        self._limits = {
-            "/api/templates/new": (5, 60),
-            "/api/templates/import": (5, 60),
-            "/api/game/": (10, 60),
-        }
-        self._limit_prefixes = {
-            "/api/templates/": (5, 60),
-        }
-        self._default_limit = (60, 60)
 
-    def _get_limit(self, path: str) -> tuple[int, int]:
-        for prefix, limit in self._limits.items():
+    @staticmethod
+    def _is_llm_endpoint(path: str) -> bool:
+        if path in _LLM_PATHS:
+            return True
+        for prefix in _LLM_PREFIXES:
             if path.startswith(prefix):
-                return limit
-        for prefix, limit in self._limit_prefixes.items():
-            if path.startswith(prefix) and "modify" in path:
-                return limit
-        return self._default_limit
+                return True
+        if path.startswith("/api/templates/") and "modify" in path:
+            return True
+        return False
 
     def _check(self, client_ip: str, path: str) -> bool:
         if os.environ.get("DISABLE_RATE_LIMIT") == "1":
             return True
-        max_req, window = self._get_limit(path)
+        if not self._is_llm_endpoint(path):
+            return True
+        max_req, window = _LLM_LIMIT
         now = time.time()
         cutoff = now - window
 
