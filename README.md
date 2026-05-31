@@ -25,10 +25,12 @@ start-dev.bat
 ### 生产构建
 
 ```bash
-build.bat    # 输出到 build/re-life/
+build.bat    # 输出到 build/re-life.zip
 ```
 
-构建好的文件夹可独立分发，用户双击 `start.bat` 即可运行。
+构建好的 zip 可独立分发，用户解压后双击 `start.bat`，首次启动自动安装依赖并打开浏览器。
+
+CI/CD 自动构建：push 到 main 分支后，GitHub Actions 自动打包 zip 发布到 Releases。
 
 ## 核心特性
 

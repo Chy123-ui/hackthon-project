@@ -1,4 +1,4 @@
-# AI WenYou Backend
+# re:life Backend
 
 FastAPI backend for the AI text adventure game engine. Powers a GM Agent that runs text-based adventures via DeepSeek v4, with autonomous state management.
 

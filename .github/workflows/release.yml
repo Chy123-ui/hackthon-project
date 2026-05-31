@@ -65,6 +65,18 @@ jobs:
           echo )>> release\re-life\start.bat
           echo start "" http://localhost:8000>> release\re-life\start.bat
           echo .venv\Scripts\python run.py>> release\re-life\start.bat
+      - run: |
+          echo # re:life> release\re-life\README.md
+          echo.>> release\re-life\README.md
+          echo ## 系统要求>> release\re-life\README.md
+          echo - Python 3.10 或更高版本>> release\re-life\README.md
+          echo - Windows 10+ / macOS / Linux>> release\re-life\README.md
+          echo.>> release\re-life\README.md
+          echo ## 快速开始>> release\re-life\README.md
+          echo 1. 双击 start.bat 启动>> release\re-life\README.md
+          echo 2. 首次启动自动安装依赖（约 1 分钟）>> release\re-life\README.md
+          echo 3. 浏览器打开 http://localhost:8000>> release\re-life\README.md
+          echo 4. Settings 填 API Key 然后 Game 开始游戏>> release\re-life\README.md
       - run: Compress-Archive -Path release\re-life -DestinationPath release\re-life.zip
       - uses: softprops/action-gh-release@v2
         with:
