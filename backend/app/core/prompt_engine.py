@@ -32,9 +32,12 @@ class PromptEngine:
         self._seed_defaults()
 
     def _load_yaml(self, path) -> dict:
-        with open(path, "r", encoding="utf-8") as f:
-            raw = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", "", f.read())
-            return yaml.safe_load(raw)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                raw = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", "", f.read())
+                return yaml.safe_load(raw) or {}
+        except Exception:
+            return {}
 
     def _save_yaml(self, path, data: dict) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
