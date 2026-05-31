@@ -146,7 +146,7 @@ class PromptEngine:
             "tone": pref.get("tone", ""),
             "pacing": pref.get("pacing", ""),
             "detail_level": pref.get("detail_level", ""),
-            "extra_context": _build_extra(w, p, pref),
+            "extra_context": "",
         }
 
     def render_system_prompt(
