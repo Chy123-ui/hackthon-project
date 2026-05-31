@@ -78,6 +78,10 @@ export async function getWorldTemplate(world: string): Promise<Record<string, un
   return request(`/templates/${world}/world`);
 }
 
+export async function saveTemplate(world: string, world_data: Record<string, unknown>, player_data: Record<string, unknown>, preferences_data: Record<string, unknown>): Promise<void> {
+  await request(`/templates/${world}`, { method: "PUT", body: JSON.stringify({ world: world_data, player: player_data, preferences: preferences_data }) });
+}
+
 export async function updateWorldTemplate(world: string, data: Record<string, unknown>): Promise<void> {
   await request(`/templates/${world}/world`, { method: "PUT", body: JSON.stringify(data) });
 }

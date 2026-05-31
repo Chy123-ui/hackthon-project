@@ -76,7 +76,7 @@ export default function WorldFileEditor({
           <button key={f} className={`tab-btn ${activeFile === f ? "active" : ""}`} onClick={() => onSelectFile(f)} style={{ padding: "8px 16px", fontSize: 13 }}>{f}</button>
         ))}
         <button className="secondary" onClick={onAiAssist} style={{ fontSize: 13 }}>AI 修改</button>
-        <button className="primary" onClick={onSave} disabled={saving}>{saving ? "保存中..." : `保存 ${activeFile}`}</button>
+        <button className="primary" onClick={onSave} disabled={saving}>{saving ? "保存中..." : "保存模板"}</button>
         {status === "saved" && <span className="status-badge saved">已保存</span>}
         {status.startsWith("error") && <span className="status-badge error">{status}</span>}
       </div>

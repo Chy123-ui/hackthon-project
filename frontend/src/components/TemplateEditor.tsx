@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import {
-  listWorlds, getWorldTemplate, updateWorldTemplate,
-  getPlayerTemplate, updatePlayerTemplate, getPreferencesTemplate,
-  updatePreferencesTemplate, previewTemplate,
+  listWorlds, getWorldTemplate,
+  getPlayerTemplate, getPreferencesTemplate,
+  saveTemplate, previewTemplate,
   exportWorld, deleteWorld, modifyWorld, getModifySuggestions,
 } from "../services/api";
 import NewWorldDialog from "./NewWorldDialog";
@@ -56,17 +56,22 @@ export default function TemplateEditor({ searchQuery = "" }: Props) {
     } catch (e: unknown) { setStatus("error: " + (e instanceof Error ? e.message : String(e))); }
   }
 
-  const fileMap: Record<WorldFile, { data: string; update: (w: string, d: Record<string, unknown>) => Promise<void> }> = {
-    world: { data: worldData, update: updateWorldTemplate },
-    player: { data: playerData, update: updatePlayerTemplate },
-    preferences: { data: preferencesData, update: updatePreferencesTemplate },
+  const fileMap: Record<WorldFile, { data: string }> = {
+    world: { data: worldData },
+    player: { data: playerData },
+    preferences: { data: preferencesData },
   };
   const dataSetters: Record<WorldFile, (v: string) => void> = { world: setWorldData, player: setPlayerData, preferences: setPreferencesData };
 
   async function handleSave() {
     try {
       setSaving(true);
-      await fileMap[activeFile].update(selectedWorld, JSON.parse(fileMap[activeFile].data));
+      await saveTemplate(
+        selectedWorld,
+        JSON.parse(worldData),
+        JSON.parse(playerData),
+        JSON.parse(preferencesData),
+      );
       const p = await previewTemplate(selectedWorld);
       setPreview(p.preview || "");
       setStatus("saved"); setTimeout(() => setStatus(""), 2000);
