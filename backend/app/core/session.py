@@ -14,7 +14,8 @@ class SessionManager:
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
 
     def _session_path(self, game_id: str) -> Path:
-        return self.sessions_dir / f"{game_id}.json.gz"
+        safe_name = game_id.replace("\\", "_").replace("/", "_").replace("..", "_")
+        return self.sessions_dir / f"{safe_name}.json.gz"
 
     def create(self, world: str, player_name: str) -> str:
         game_id = uuid.uuid4().hex[:12]

@@ -29,15 +29,21 @@ CONFIG_PATH = settings.data_dir / "config.json"
 
 
 def _load_server_config() -> dict:
-    if CONFIG_PATH.exists():
-        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            return decrypt_config(json.load(f))
+    try:
+        if CONFIG_PATH.exists():
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                return decrypt_config(json.load(f))
+    except Exception:
+        pass
     return {}
 
 
 def _save_server_config(config: dict) -> None:
-    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(encrypt_api_key(config), f, ensure_ascii=False, indent=2)
+    try:
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(encrypt_api_key(config), f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
 
 
 def _apply_config(config: dict) -> None:
@@ -557,7 +563,9 @@ def _extract_name(yaml_str: str, fallback: str) -> str:
 
 
 def _sanitize_name(name: str) -> str:
-    return re.sub(r"[\/\\:*?\"<>|]", "", name.strip())[:30]
+    cleaned = re.sub(r"[\/\\:*?\"<>|]", "", name.strip())
+    cleaned = cleaned.replace("..", "")
+    return cleaned[:30]
 
 
 def _fallback_parse(raw: str, concept: str):
