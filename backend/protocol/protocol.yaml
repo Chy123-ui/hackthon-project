@@ -54,42 +54,69 @@ protocol: |
   直接演出场景，就像小说叙事一样。200-500 字。
 
   ### 3. <state> 状态块 [不显示给玩家]
-  所有状态键必须使用中文。禁止使用英文 key（如 knowledge, location）。
-  正确: <set key="学识">8</set>  错误: <set key="knowledge">8</set>
-  极其重要！状态块必须使用 XML 标签，绝不能写成纯文本或 YAML 格式。
-  正确的格式是：
 
+  状态管理铁律：
+  - 每个 <state> 块最多 8 个操作。超过 8 个说明你在画蛇添足——删掉不重要的。
+  - 同类信息用 set 覆盖，不要 add 重复。比如位置变了直接 <set key="位置">新地点</set>。
+  - 物品消耗/用掉后必须 delete：<del key="背包·治疗药水"/> 或 set 覆盖数量。
+  - 没有变化的状态不要重复写！已经记录过的"遇到角色"不要再 add 第二遍。
+  - 读一下当前状态：如果某个 key 已经存在且不需改，就别碰它。
+
+  所有状态键必须使用中文。禁止使用英文 key。
+  正确: <set key="学识">8</set>  错误: <set key="knowledge">8</set>
+
+  操作类型：
+  - <set key="x">value</set>     单值覆盖（替换旧值）
+  - <add key="x" value="v"/>     列表追加（查重，已有则跳过）
+  - <add key="x" value="v" label="中文名"/>   存英文值 + 显中文名
+  - <del key="x"/>               删除整个键
+  - <del key="x" value="v"/>     从列表中移除某一项（物品用掉时用这个！）
+
+  示例——物品消耗场景：
   <state>
-    <set key="位置">金叶城·醉龙酒馆</set>
-    <set key="生命值">100</set>
-    <add key="背包" value="一把生锈的匕首"/>
-    <add key="遇到角色" value="大胡子矮人酒保"/>
-    <add key="标记" value="发现暗门"/>
+    <set key="位置">古墓·第三层</set>
+    <del key="背包" value="火把"/>        <!-- 火把烧完了 -->
+    <del key="背包" value="解毒草药"/>     <!-- 药用掉了 -->
+    <add key="标记" value="解除毒雾机关"/>
+    <set key="生命值">85</set>
   </state>
 
-  错误的格式（绝对不要这样写）：
-  [location: 酒馆]   <-- 错误！
-  location: 酒馆      <-- 错误！
-  flags: {{}}           <-- 错误！
-  
-  每种操作的使用方法：
-  - <set key="x">value</set>    单值覆盖
-  - <add key="x" value="v"/>    列表追加
-  - <add key="x" value="v" label="中文名"/>    value 英文存 + label 中文显
-  - <del key="x"/>              删除
-  所有键名统一使用中文。
-  - <del key="x"/>              删除某个键
-  状态键推荐使用中文命名。flags 等集合型 key 允许存英文值，
-  但必须同时提供中文 label 用于展示。
-   示例：<add key="标记" value="到访酒馆"/>
+  不要这样写（重复而非删除）：
+  <state>
+    <add key="背包" value="火把"/>           ← 错！火把还在背包里
+    <add key="背包" value="解毒草药"/>        ← 错！药已经吃了
+    <set key="生命值">85</set>
+    <add key="标记" value="解除毒雾机关"/>
+    <set key="标记" value="已探索"/>          ← 错！覆盖了前一条标记
+  </state>
 
-  首次对话时，你应当在第一个 <state> 块中初始化基础状态：
+  不要这样写（冗长啰嗦）：
+  <state>
+    <set key="位置">古墓·第三层</set>
+    <set key="当前时间">深夜</set>
+    <set key="天气">阴冷潮湿</set>
+    <set key="能见度">昏暗 仅火把范围</set>
+    <set key="地面">碎石路</set>
+    <set key="墙壁">布满苔藓</set>
+    <set key="气味">霉味</set>
+    <set key="声音">远处滴水声</set>
+    <set key="心情">警惕</set>
+    ...  ← 太多了！环境描写在 <narrate> 里做，state 只记会变化的关键信息
+  </state>
+
+  精简后正确写法：
+  <state>
+    <set key="位置">古墓·第三层</set>
+    <set key="生命值">85</set>
+    <del key="背包" value="火把"/>
+    <add key="标记" value="解除毒雾机关"/>
+  </state>
+
+  首次对话初始化基础状态（最多 4 个 key）：
   <state>
     <set key="位置">冒险者公会大厅</set>
     <set key="生命值">100</set>
   </state>
-
-  - 你可以自由创建新的状态键来记录任何你认为重要的信息
 
   ### 4. <suggestions> 建议块 [显示给玩家]
   列出 2-4 个建议行动，每个用 <action> 标签包裹。

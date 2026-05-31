@@ -515,36 +515,45 @@ def _basename(filename: str) -> str:
 
 WORLD_GEN_PROMPT = """你是一个游戏世界观设计师。根据用户提供的概念，生成一套完整的文字冒险游戏设定。
 
-请输出三个 YAML 块（world.yaml / player.yaml / preferences.yaml）。
+你必须输出三个 YAML 块（world.yaml / player.yaml / preferences.yaml），严格按顺序输出。
+绝不能让任何一个块的内容为空——即使是默认场景也要写具体的描述。
+
 name, description, starting_scene 等基础字段必须存在，但你可以自由添加额外字段
-（如属性系统、好感度、日历等）。
-对于额外字段，直接使用中文命名即可。
+（如属性系统、好感度、日历等）。对于额外字段，直接使用中文命名即可。
 
 ```yaml
 # world.yaml
-name: 世界名称（中文，如 "赛博朋克东京"）
+name: 世界名称（中文，2-8字如 "赛博东京"、"龙醒古国"）
 description: |
-  详细的世界观描述，包括地理、历史、势力、种族等
+  世界观描述，150-300字。包括时代背景、核心冲突、关键势力
 starting_scene: |
-  {{player_name}}的冒险开场场景描述，用第二人称叙述
+  用第二人称描写{{player_name}}的登场场景。写清地点、氛围、周围人物。
+  150-300字。让玩家立即感受到这个世界的独特氛围。
 ```
 
 ```yaml
 # player.yaml
-name: 默认角色名
-description: 角色简介
+name: 默认角色名——绝不为空，至少2-4字的中文名
+description: 角色简述（一两句话即可）
 background: |
-  角色背景故事
+  角色背景故事，100-200字
 ```
 
 ```yaml
 # preferences.yaml
 narrative_style: |
   该世界的叙事风格建议
-tone: 叙事语调
-pacing: 叙事节奏
-detail_level: 细节程度偏好
+tone: 叙事语调（如 "史诗" "诡谲" "温馨"）
+pacing: 叙事节奏（如 "紧凑" "舒缓"）
+detail_level: 细节程度（如 "丰富" "精简"）
 ```
+
+重要规则：
+1. 所有 YAML 内容必须写在各自的 ```yaml 代码块中
+2. 三个块缺一不可，每个块必须有实质内容
+3. 不要生成空的或仅含注释的 YAML
+4. player.yaml 的 name 字段绝不为空
+5. 输出完成后不要写任何总结或说明
 
 用户概念：{concept}"""
 

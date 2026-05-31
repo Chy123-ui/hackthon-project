@@ -202,6 +202,12 @@ class PromptEngine:
             if isinstance(updates[key], list):
                 entry = {"value": val, "label": label} if label else val
                 updates[key].append(entry)
+        for match in re.finditer(r"<del\s+key=\"([^\"]+)\"\s+value=\"([^\"]*)\"\s*/>", block):
+            key, val = match.group(1), match.group(2)
+            if key not in updates:
+                updates[key] = []
+            if isinstance(updates[key], list):
+                updates[key].append({"__del": val})
         for match in re.finditer(r"<del\s+key=\"([^\"]+)\"\s*/>", block):
             updates[match.group(1)] = None
 
@@ -213,13 +219,21 @@ class PromptEngine:
             elif isinstance(value, list) and key in new_state and isinstance(new_state[key], list):
                 existing_set = {v.get("value") if isinstance(v, dict) else v for v in new_state[key]}
                 for v in value:
-                    v_clean = v.get("value") if isinstance(v, dict) else v
-                    if v_clean not in existing_set:
-                        new_state[key].append(v)
-                        if isinstance(v, dict):
-                            existing_set.add(v.get("value"))
-                        else:
-                            existing_set.add(v)
+                    if isinstance(v, dict) and v.get("__del"):
+                        del_val = v["__del"]
+                        new_state[key] = [
+                            item for item in new_state[key]
+                            if (item.get("value") if isinstance(item, dict) else item) != del_val
+                        ]
+                        existing_set.discard(del_val)
+                    else:
+                        v_clean = v.get("value") if isinstance(v, dict) else v
+                        if v_clean not in existing_set:
+                            new_state[key].append(v)
+                            if isinstance(v, dict):
+                                existing_set.add(v.get("value"))
+                            else:
+                                existing_set.add(v)
             else:
                 new_state[key] = value
         return new_state
