@@ -32,3 +32,5 @@ Thumbs.db
 # Secrets
 Key/
 .env
+".playwright-mcp/"  
+"snap*.txt"  

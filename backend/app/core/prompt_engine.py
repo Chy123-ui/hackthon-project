@@ -33,12 +33,15 @@ class PromptEngine:
 
     def _load_yaml(self, path) -> dict:
         with open(path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f)
+            raw = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", "", f.read())
+            return yaml.safe_load(raw)
 
     def _save_yaml(self, path, data: dict) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
-            yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+            raw = yaml.dump(data, allow_unicode=True, default_flow_style=False)
+            cleaned = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", "", raw)
+            f.write(cleaned)
 
     def _seed_defaults(self) -> None:
         """Copy fantasy default template only on first run"""
@@ -152,7 +155,7 @@ class PromptEngine:
             result["narrate"] = narrate_match.group(1).strip()
         suggestions_block = re.search(r"<(suggestions|actions)>(.*?)</\1>", raw, re.DOTALL)
         if suggestions_block:
-            actions = re.findall(r"<action>(.*?)</action>", suggestions_block.group(1), re.DOTALL)
+            actions = re.findall(r"<action>(.*?)</action>", suggestions_block.group(2), re.DOTALL)
             result["suggestions"] = [a.strip() for a in actions]
         state_block = re.search(r"<state>(.*?)</state>", raw, re.DOTALL)
         if state_block:
