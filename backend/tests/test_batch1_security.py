@@ -175,7 +175,6 @@ class TestErrorMessagesNotLeaked:
         })
         assert resp.status_code == 200, f"Game creation failed: {resp.json()}"
         game_id = resp.json()["game_id"]
-        client.post(f"/api/game/{game_id}/start")
         resp2 = client.post(
             f"/api/game/{game_id}/action",
             json={"action": "look around"},

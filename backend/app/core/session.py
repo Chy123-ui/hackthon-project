@@ -13,13 +13,13 @@ class SessionManager:
     def __init__(self):
         self.sessions_dir = settings.data_dir / "sessions"
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
-        self._locks: dict[str, threading.Lock] = {}
+        self._locks: dict[str, threading.RLock] = {}
         self._locks_lock = threading.Lock()
 
-    def _get_lock(self, game_id: str) -> threading.Lock:
+    def _get_lock(self, game_id: str) -> threading.RLock:
         with self._locks_lock:
             if game_id not in self._locks:
-                self._locks[game_id] = threading.Lock()
+                self._locks[game_id] = threading.RLock()
             return self._locks[game_id]
 
     def _session_path(self, game_id: str) -> Path:
@@ -62,7 +62,7 @@ class SessionManager:
             json.dump(session, f, ensure_ascii=False, indent=2, default=str)
         tmp_path.replace(self._session_path(game_id))
 
-    def lock(self, game_id: str) -> threading.Lock:
+    def lock(self, game_id: str) -> threading.RLock:
         """Acquire lock for read-modify-write. Caller must release()."""
         lk = self._get_lock(game_id)
         lk.acquire()

@@ -663,7 +663,8 @@ async def start_game(game_id: str):
             result = await llm_client.chat(messages)
             raw_reply = result["choices"][0]["message"]["content"]
         except _LLM_ERRORS as e:
-            logger.error("LLM API request failed: %s", e, exc_info=True)
+            logger.error("LLM start failed: %s", e, exc_info=True)
+            session_manager.delete(game_id)
             raise HTTPException(status_code=500, detail="LLM API request failed")
         session["messages"].append({"role": "user", "content": "(游戏开始)", "tape": "normal"})
         session["messages"].append({"role": "assistant", "content": raw_reply, "tape": "normal"})
