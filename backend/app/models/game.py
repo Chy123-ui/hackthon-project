@@ -23,9 +23,7 @@ class NewGameRequest(BaseModel):
     @field_validator("world")
     @classmethod
     def sanitize_world(cls, v: str) -> str:
-        if not v:
-            raise ValueError("world name is required")
-        v = re.sub(r"[\/\\:*?\"<>|]", "", v.strip())
+        v = re.sub(r"[\/\\:*?\"<>|]", "", (v or "").strip())
         v = v.replace("..", "")
         return v[:30]
 

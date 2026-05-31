@@ -634,8 +634,13 @@ def _fallback_parse(raw: str, concept: str):
 
 @router.post("/game/new", response_model=NewGameResponse)
 async def new_game(body: NewGameRequest):
-    game_id = session_manager.create(body.world, body.player_name)
-    return NewGameResponse(game_id=game_id, world=body.world, player_name=body.player_name)
+    world = body.world
+    if not world:
+        all_worlds = prompt_engine.list_worlds()
+        world = all_worlds[0] if all_worlds else "fantasy"
+    player_name = body.player_name or "\u5192\u9669\u8005"
+    game_id = session_manager.create(world, player_name)
+    return NewGameResponse(game_id=game_id, world=world, player_name=player_name)
 
 
 @router.post("/game/{game_id}/start")

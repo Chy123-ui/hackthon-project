@@ -45,6 +45,9 @@ export default function GameView({ searchQuery = "" }: Props) {
         if (name) {
           setPlaceholderName(name);
           defaultNameRef.current = name;
+        } else {
+          setPlaceholderName("");
+          defaultNameRef.current = "\u5192\u9669\u8005";
         }
       })
       .catch(() => {});
