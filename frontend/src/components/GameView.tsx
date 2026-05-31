@@ -27,6 +27,7 @@ export default function GameView({ searchQuery = "" }: Props) {
   const [activePlayerName, setActivePlayerName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const defaultNameRef = useRef("冒险者");
   const firstLoadRef = useRef(true);
@@ -97,6 +98,7 @@ export default function GameView({ searchQuery = "" }: Props) {
     try {
       await deleteGame(deleteTarget);
       setDeleteTarget(null);
+      setStatus("\u5df2\u5220\u9664"); setTimeout(() => setStatus(""), 2000);
       await loadAll();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -178,6 +180,11 @@ export default function GameView({ searchQuery = "" }: Props) {
           {loading ? "创建中..." : "新游戏"}
         </button>
       </div>
+      {status && (
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "10px 24px", borderRadius: "var(--radius)", background: "var(--accent)", color: "#fff", fontSize: 14, fontWeight: 500, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", zIndex: 1000 }}>
+          {status}
+        </div>
+      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ export default function HistoryView({ searchQuery = "" }: Props) {
   const [activeSession, setActiveSession] = useState<GameListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
   const [multiMode, setMultiMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -41,6 +42,7 @@ export default function HistoryView({ searchQuery = "" }: Props) {
       await deleteGame(deleteTarget);
       setDeleteTarget(null);
       if (activeSession?.id === deleteTarget) setActiveSession(null);
+      setStatus("\u5df2\u5220\u9664"); setTimeout(() => setStatus(""), 2000);
       await loadSessions();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -65,6 +67,7 @@ export default function HistoryView({ searchQuery = "" }: Props) {
       }
       setSelected(new Set());
       setMultiMode(false);
+      setStatus("\u5df2\u5220\u9664"); setTimeout(() => setStatus(""), 2000);
       await loadSessions();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -146,6 +149,11 @@ export default function HistoryView({ searchQuery = "" }: Props) {
         <p style={{ color: "var(--text-secondary)", fontSize: 14, textAlign: "center", padding: 40 }}>
           没有找到故事。
         </p>
+      )}
+      {status && (
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "10px 24px", borderRadius: "var(--radius)", background: "var(--accent)", color: "#fff", fontSize: 14, fontWeight: 500, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", zIndex: 1000 }}>
+          {status}
+        </div>
       )}
     </div>
   );
