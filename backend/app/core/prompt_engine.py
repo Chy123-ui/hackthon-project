@@ -7,6 +7,10 @@ from pathlib import Path
 from .config import settings
 
 
+def _escape_format(s: str) -> str:
+    return s.replace("{", "{{").replace("}}", "}}")
+
+
 def _sanitize_yaml(data):
     """Recursively strip control chars and escape YAML-significant content"""
     if isinstance(data, str):
@@ -135,6 +139,7 @@ class PromptEngine:
         safety = self.load_safety()
         context = self.build_context(world, player_name)
         context["state_context"] = self._format_state_context(game_state or {})
+        context = {k: _escape_format(str(v)) for k, v in context.items()}
         prompt = protocol.format(**context)
         if safety:
             prompt += "\n\n" + safety
@@ -144,7 +149,7 @@ class PromptEngine:
         w = self.load_world(world) or {}
         starting_scene = w.get("starting_scene", "")
         if starting_scene:
-            return starting_scene.format(player_name=player_name)
+            return starting_scene.format(player_name=_escape_format(player_name))
         return f"{player_name}的冒险开始了。"
 
     def parse_response(self, raw: str) -> dict:

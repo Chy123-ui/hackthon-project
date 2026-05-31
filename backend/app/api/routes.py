@@ -20,6 +20,11 @@ from ..models.game import (
     ConfigUpdate,
 )
 
+
+def _escape_format(s: str) -> str:
+    return s.replace("{", "{{").replace("}}", "}}")
+
+
 router = APIRouter(prefix="/api")
 prompt_engine = PromptEngine()
 session_manager = SessionManager()
@@ -272,11 +277,11 @@ async def modify_world(world: str, body: dict):
     prefs_yaml = yaml.dump(prefs_data, allow_unicode=True)
 
     prompt = MODIFY_PROMPT.format(
-        instruction=instruction,
-        world_name=world_data.get("name", world),
-        world_content=world_yaml,
-        player_content=player_yaml,
-        prefs_content=prefs_yaml,
+        instruction=_escape_format(instruction),
+        world_name=_escape_format(world_data.get("name", world)),
+        world_content=_escape_format(world_yaml),
+        player_content=_escape_format(player_yaml),
+        prefs_content=_escape_format(prefs_yaml),
     )
 
     try:
@@ -306,10 +311,12 @@ async def get_modify_suggestions(world: str):
     if world_data is None:
         raise HTTPException(status_code=404, detail=f"World '{world}' not found")
 
-    summary = f"World name: {world_data.get('name', world)}\n"
-    summary += f"Description: {world_data.get('description', '')[:300]}\n"
-    summary += f"Player: {player_data.get('name', '')} - {player_data.get('background', '')[:100]}"
-    summary += f"Tone: {prefs_data.get('tone', '')}"
+    summary = _escape_format(
+        f"World name: {world_data.get('name', world)}\n"
+        f"Description: {world_data.get('description', '')[:300]}\n"
+        f"Player: {player_data.get('name', '')} - {player_data.get('background', '')[:100]}"
+        f"Tone: {prefs_data.get('tone', '')}"
+    )
 
     try:
         result = await llm_client.chat([{
@@ -414,7 +421,7 @@ async def import_world(body: dict):
 
     try:
         result = await llm_client.chat([
-            {"role": "user", "content": IMPORT_PROMPT.format(content=content[:8000])}
+            {"role": "user", "content": IMPORT_PROMPT.format(content=_escape_format(content[:8000]))}
         ], max_tokens=settings.gen_max_tokens)
         raw = result["choices"][0]["message"]["content"]
     except Exception as e:
@@ -505,7 +512,7 @@ async def generate_world(body: dict):
         raise HTTPException(status_code=400, detail="Concept is required")
     try:
         result = await llm_client.chat([
-            {"role": "user", "content": WORLD_GEN_PROMPT.format(concept=concept)}
+            {"role": "user", "content": WORLD_GEN_PROMPT.format(concept=_escape_format(concept))}
         ], max_tokens=settings.gen_max_tokens)
         raw = result["choices"][0]["message"]["content"]
     except Exception as e:
@@ -548,7 +555,7 @@ def _parse_world_gen(raw: str, concept: str):
         return _fallback_parse(raw, concept)
     world_yaml = sections["world"]
     player_yaml = sections.get("player", "name: 冒险者\ndescription: 一位冒险者\nbackground: 普通出身")
-    prefs_yaml = sections.get("preferences", f"narrative_style: 生动的叙事风格\ntone: 适合{concept}的语调\npacing: 适中\ndetail_level: 适中")
+    prefs_yaml = sections.get("preferences", f"narrative_style: 生动的叙事风格\ntone: 适合{_escape_format(concept)}的语调\npacing: 适中\ndetail_level: 适中")
     world_name = _extract_name(world_yaml, concept)
     return world_name, {"world.yaml": world_yaml, "player.yaml": player_yaml, "preferences.yaml": prefs_yaml}
 
@@ -572,7 +579,7 @@ def _fallback_parse(raw: str, concept: str):
     wname = _sanitize_name(concept)
     safe = concept.replace('"', "'")
     return wname, {
-        "world.yaml": f"name: {safe}\ndescription: |\n  这是一个以「{safe}」为主题的世界。\n\nstarting_scene: |\n  {{player_name}}睁开双眼，发现自己正处在一个陌生的环境中。",
+        "world.yaml": f"name: {_escape_format(safe)}\ndescription: |\n  这是一个以「{_escape_format(safe)}」为主题的世界。\n\nstarting_scene: |\n  {{player_name}}睁开双眼，发现自己正处在一个陌生的环境中。",
         "player.yaml": "name: 冒险者\ndescription: 一位来到这个世界的冒险者\nbackground: 怀着对未知的好奇，踏入了这个世界的门槛",
         "preferences.yaml": "narrative_style: |\n  生动的叙事风格，注重环境描写。\ntone: 认真与轻松并存\npacing: 适中\ndetail_level: 丰富",
     }
@@ -596,7 +603,7 @@ async def start_game(game_id: str):
     game_state = session.get("game_state", {})
     system_prompt = prompt_engine.render_system_prompt(session["world"], session["player_name"], game_state)
     first_scene = prompt_engine.render_first_message(session["world"], session["player_name"])
-    starter = f"{system_prompt}\n\n现在开始游戏。玩家当前场景参考：{first_scene[:100]}..."
+    starter = f"{system_prompt}\n\n现在开始游戏。玩家当前场景参考：{_escape_format(first_scene[:100])}..."
     if "首先，请为这个场景开场" not in starter:
         starter += "\n请以生动叙事开场，不要重复上述场景参考的原文。"
     messages = [{"role": "system", "content": starter}, {"role": "user", "content": "(游戏开始)"}]
